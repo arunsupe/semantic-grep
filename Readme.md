@@ -24,6 +24,7 @@ Note: There are no external dependenceis; uses just the stdlib (and the model)
 ## Installation
 - clone the repo
 - run `go build -o bin/sgrep` 
+- run `bash download-model.sh` # to download the word2vec model
 
 
 ## Usage
