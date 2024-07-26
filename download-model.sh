@@ -9,12 +9,9 @@ mkdir -p "$(dirname "$save_path")"
 
 # Download the model with progress bar (simulated)
 echo "Downloading..."
-wget -O "$save_path.tmp" -q --show-progress "$model_url"
+wget -O "$save_path.gz" -q --show-progress "$model_url"
 
 # Decompress the file
-gunzip -f "$save_path.tmp"
-
-# Move the decompressed file to final location
-mv "$save_path.tmp" "$save_path"
+gunzip "$save_path.gz"
 
 echo "Model downloaded and saved to: $save_path"
