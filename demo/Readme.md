@@ -43,6 +43,6 @@ Similarity: 0.3249
 art are reflections of human experience. Classic novels and contemporary fiction explore themes of love, loss, and identity. Visual arts, from painting to digital media, offer diverse perspectives and emotional depth. The evolution of artistic expression continues to shape cultural
 ```
 
-Conclusion:
+
 This demo highlights how sgrep identifies semantic connections in text and how adjusting the similarity threshold affects the results.
 
