@@ -7,7 +7,8 @@ sgrep is a command-line tool that performs semantic searches on text input using
 Search for words similar to "death" in Hemingway's "The Old Man and the Sea" with context and line numbers:
 
 ```bash
-curl -s 'https://gutenberg.ca/ebooks/hemingwaye-oldmanandthesea/hemingwaye-oldmanandthesea-00-t.txt' | ./sgrep -C 2 -n -threshold 0.55 death
+curl -s 'https://gutenberg.ca/ebooks/hemingwaye-oldmanandthesea/hemingwaye-oldmanandthesea-00-t.txt' \
+    | sgrep -C 2 -n -threshold 0.55 death
 ```
 
 Output:
