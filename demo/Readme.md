@@ -12,7 +12,7 @@ How It Works:
    - Lowering the similarity_threshold allows the program to match less similar words.
 
 3. **Test Passage**: 
-   - We created a passage (demo.txt) with various topics and some semantic overlap.
+   - We created a passage (test-passage.txt) with various topics and some semantic overlap.
    - With a high threshold, we expect sepcific matches. As we relax the threshold, we expect loss of specificity.
 
 4. **Execution**:
