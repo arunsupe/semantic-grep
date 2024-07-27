@@ -11,27 +11,10 @@ import (
 	"strings"
 )
 
-// Configuration
-const (
-	DefaultConfigPath = "config.json"
-)
-
-var stopWords = map[string]bool{
-	"of": true, "to": true, "in": true, "on": true, "at": true, "by": true, "with": true,
-	"the": true, "a": true, "an": true, "and": true, "but": true, "or": true, "so": true,
-	"yet": true, "is": true, "are": true, "am": true, "be": true, "been": true, "not": true,
-	"only": true, "just": true, "still": true, "already": true, "I": true, "me": true,
-	"my": true, "mine": true, "you": true, "your": true, "yours": true, "he": true,
-	"him": true, "his": true, "it": true, "its": true, "they": true, "them": true,
-	"their": true, "theirs": true, "oh": true, "ah": true, "yes": true, "no": true,
-	"okay": true, "one": true, "two": true, "three": true, "four": true, "five": true,
-	"six": true, "seven": true, "eight": true, "nine": true,
-}
+const DefaultConfigPath = "config.json"
 
 type Config struct {
-	ModelPath           string  `json:"model_path"`
-	SimilarityThreshold float64 `json:"similarity_threshold"`
-	Window              int     `json:"window"`
+	ModelPath string `json:"model_path"`
 }
 
 type Word2VecModel struct {
@@ -101,198 +84,151 @@ func getVectorEmbedding(token string, model *Word2VecModel) []float32 {
 	return vec
 }
 
-func toVector(tokens []string, model *Word2VecModel) []float32 {
-	sum := make([]float32, model.Size)
-	count := 0
-	for _, token := range tokens {
-		token = strings.ToLower(token)
-		if !stopWords[token] {
-			vec := getVectorEmbedding(token, model)
-			for i, v := range vec {
-				sum[i] += v
-			}
-			count++
-		}
-	}
-	if count == 0 {
-		return sum
-	}
-	for i := range sum {
-		sum[i] /= float32(count)
-	}
-	return sum
-}
-
-/*
-processTokenStream processes the input text stream and finds semantically similar chunks to the given query.
-The function follows these steps:
-
-1. Convert the query to a vector representation.
-2. Initialize a token buffer and a scanner to read input tokens.
-3. For each token in the input stream:
-   a. Add the token to the buffer.
-   b. When the buffer reaches the window size:
-      - Check if the chunk has an acceptable amount of punctuation.
-      - Convert the chunk to a vector and calculate its similarity to the query.
-      - If the similarity is above the threshold and higher than the current best:
-        * Update the best chunk and its similarity score.
-      - Increment the count of processed tokens.
-      - If a full window's worth of tokens has been processed:
-        * Print the best chunk found (if any).
-        * Reset the best similarity and processed token count.
-      - Slide the window forward by removing the oldest tokens.
-4. After processing all tokens, print any remaining best chunk.
-
-This approach ensures that:
-- Only non-overlapping chunks are printed.
-- Each printed chunk is the most similar to the query within its window.
-- The sliding window mechanism is maintained, allowing for flexible matching.
-- Output is significantly reduced compared to printing every similar chunk.
-*/
-func processTokenStream(query string, model *Word2VecModel, window int, similarityThreshold float64) {
-	// Convert the query to a vector representation
-	queryVector := toVector(strings.Fields(query), model)
-
-	// Initialize a buffer to hold tokens, with capacity equal to the window size
-	tokenBuffer := make([]string, 0, window)
-
-	// Calculate the step size for sliding the window
-	// This determines how many tokens we move forward after processing each window
-	stepSize := window / 10
-
-	// Set up a scanner to read input token by token
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Split(bufio.ScanWords)
-
-	// Variables to keep track of the best matching chunk within a non-overlapping window
-	bestChunk := make([]string, 0, window)
-	bestSimilarity := 0.0
-	tokensProcessed := 0
-
-	// Main loop to process input tokens
-	for scanner.Scan() {
-		// Read the next token
-		token := scanner.Text()
-
-		// Add the token to our buffer
-		tokenBuffer = append(tokenBuffer, token)
-
-		// Process the buffer when it reaches the window size
-		if len(tokenBuffer) == window {
-			// Check if the chunk doesn't have too many punctuations
-			if countPunctuations(tokenBuffer) <= int(0.2*float64(window)) {
-				// Convert the current chunk to a vector
-				tokenVector := toVector(tokenBuffer, model)
-
-				// Calculate similarity between the chunk and the query
-				similarity := calculateSimilarity(queryVector, tokenVector)
-
-				// If this chunk is more similar than the previous best and above threshold,
-				// update our best chunk
-				if similarity > similarityThreshold && similarity > bestSimilarity {
-					bestSimilarity = similarity
-					bestChunk = make([]string, len(tokenBuffer))
-					copy(bestChunk, tokenBuffer)
-				}
-			}
-
-			// Increment our count of processed tokens
-			tokensProcessed += stepSize
-
-			// If we've processed a full window's worth of tokens,
-			// print the best chunk we've found (if any)
-			if tokensProcessed >= window {
-				if bestSimilarity > 0 {
-					fmt.Printf("Similarity: %.4f\n", bestSimilarity)
-					colorText(strings.Join(bestChunk, " "), int(bestSimilarity*5)+1)
-					fmt.Println()
-				}
-				// Reset our tracking variables for the next window
-				bestSimilarity = 0
-				tokensProcessed = 0
-			}
-
-			// Slide the window forward by removing processed tokens
-			tokenBuffer = tokenBuffer[stepSize:]
-		}
-	}
-
-	// After processing all input, check if there's a remaining best chunk to print
-	// This handles cases where the input ends before completing another full window
-	if bestSimilarity > 0 {
-		fmt.Printf("Similarity: %.4f\n", bestSimilarity)
-		colorText(strings.Join(bestChunk, " "), int(bestSimilarity*5)+1)
-		fmt.Println()
-	}
-}
-func calculateSimilarity(queryVector, tokenVector []float32) float64 {
+func calculateSimilarity(vec1, vec2 []float32) float64 {
 	dotProduct := float64(0)
-	normQuery := float64(0)
-	normToken := float64(0)
-	for i := range queryVector {
-		dotProduct += float64(queryVector[i] * tokenVector[i])
-		normQuery += float64(queryVector[i] * queryVector[i])
-		normToken += float64(tokenVector[i] * tokenVector[i])
+	norm1 := float64(0)
+	norm2 := float64(0)
+	for i := range vec1 {
+		dotProduct += float64(vec1[i] * vec2[i])
+		norm1 += float64(vec1[i] * vec1[i])
+		norm2 += float64(vec2[i] * vec2[i])
 	}
-	return dotProduct / (math.Sqrt(normQuery) * math.Sqrt(normToken))
+	return dotProduct / (math.Sqrt(norm1) * math.Sqrt(norm2))
 }
 
-func countPunctuations(textList []string) int {
-	count := 0
-	for _, text := range textList {
-		for _, char := range text {
-			if strings.ContainsRune("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~", char) {
-				count++
+func colorText(text string, color string) string {
+	switch color {
+	case "red":
+		return fmt.Sprintf("\033[91m%s\033[0m", text)
+	case "green":
+		return fmt.Sprintf("\033[92m%s\033[0m", text)
+	default:
+		return text
+	}
+}
+
+func processLineByLine(query string, model *Word2VecModel, similarityThreshold float64, contextBefore, contextAfter int, input *os.File, printLineNumbers bool) {
+	queryVector := getVectorEmbedding(query, model)
+	scanner := bufio.NewScanner(input)
+	lineNumber := 0
+	var contextBuffer []string
+	var contextLineNumbers []int
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		lineNumber++
+		tokens := strings.Fields(line)
+		matched := false
+		var highlightedLine string
+		var similarityScore float64
+
+		for _, token := range tokens {
+			tokenVector := getVectorEmbedding(token, model)
+			similarity := calculateSimilarity(queryVector, tokenVector)
+			if similarity > similarityThreshold {
+				highlightedLine = strings.Replace(line, token, colorText(token, "red"), -1)
+				matched = true
+				similarityScore = similarity
+				break
+			}
+		}
+
+		if matched {
+			// Print similarity score
+			fmt.Printf("Similarity: %.4f\n", similarityScore)
+
+			// Print context before matching line
+			for i, ctxLine := range contextBuffer {
+				printLine(ctxLine, contextLineNumbers[i], printLineNumbers)
+			}
+			contextBuffer = nil // Clear context buffer after printing
+			contextLineNumbers = nil
+
+			// Print matching line
+			printLine(highlightedLine, lineNumber, printLineNumbers)
+
+			// Collect context after matching line
+			for i := 0; i < contextAfter && scanner.Scan(); i++ {
+				lineNumber++
+				printLine(scanner.Text(), lineNumber, printLineNumbers)
+			}
+
+			// Print line separator after each match
+			fmt.Println("--")
+		} else {
+			// Maintain context buffer
+			if contextBefore > 0 {
+				contextBuffer = append(contextBuffer, line)
+				contextLineNumbers = append(contextLineNumbers, lineNumber)
+				if len(contextBuffer) > contextBefore {
+					contextBuffer = contextBuffer[1:]
+					contextLineNumbers = contextLineNumbers[1:]
+				}
 			}
 		}
 	}
-	return count
+
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+	}
 }
 
-func colorText(text string, importanceLevel int) {
-	colors := map[int]string{
-		1: "\033[91m", // Bright Red
-		2: "\033[93m", // Bright Yellow
-		3: "\033[94m", // Bright Blue
-		4: "\033[95m", // Bright Magenta
-		5: "\033[0m",  // Default color
+func printLine(line string, lineNumber int, printLineNumbers bool) {
+	if printLineNumbers {
+		fmt.Printf("%s:", colorText(fmt.Sprintf("%d", lineNumber), "green"))
 	}
-	fmt.Printf("%s%s\033[0m\n", colors[importanceLevel], text)
+	fmt.Println(line)
 }
 
 func main() {
-	fmt.Println("sgrep - Semantic Grep")
-
-	query := flag.String("query", "", "Query string for semantic search")
-	configPath := flag.String("config", DefaultConfigPath, "Path to the configuration file")
 	modelPath := flag.String("model_path", "", "Path to the Word2Vec model file")
-	similarityThreshold := flag.Float64("similarity_threshold", 0, "Similarity threshold for matching")
-	window := flag.Int("window", 0, "Window size for token stream")
+	similarityThreshold := flag.Float64("threshold", 0.7, "Similarity threshold for matching")
+	contextBefore := flag.Int("A", 0, "Number of lines before matching line")
+	contextAfter := flag.Int("B", 0, "Number of lines after matching line")
+	contextBoth := flag.Int("C", 0, "Number of lines before and after matching line")
+	printLineNumbers := flag.Bool("n", false, "Print line numbers")
 
 	flag.Parse()
 
+	// Override contextBefore and contextAfter if contextBoth is specified
+	if *contextBoth > 0 {
+		*contextBefore = *contextBoth
+		*contextAfter = *contextBoth
+	}
+
+	// Remaining arguments are the query and optional filename
+	args := flag.Args()
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "Error: query is required")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	query := args[0]
+	var input *os.File
+	var err error
+
+	if len(args) > 1 {
+		input, err = os.Open(args[1])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error opening file: %v\n", err)
+			os.Exit(1)
+		}
+		defer input.Close()
+	} else {
+		input = os.Stdin
+	}
+
 	// Load configuration from file
-	config, err := loadConfig(*configPath)
+	config, err := loadConfig(DefaultConfigPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Override config values with CLI values if provided
+	// Override modelPath if provided via command line
 	if *modelPath != "" {
 		config.ModelPath = *modelPath
-	}
-	if *similarityThreshold != 0 {
-		config.SimilarityThreshold = *similarityThreshold
-	}
-	if *window != 0 {
-		config.Window = *window
-	}
-
-	if *query == "" {
-		fmt.Fprintln(os.Stderr, "Error: query is required")
-		flag.PrintDefaults()
-		os.Exit(1)
 	}
 
 	model, err := loadWord2VecModel(config.ModelPath)
@@ -301,7 +237,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Query: %s\n", *query)
-
-	processTokenStream(*query, model, config.Window, config.SimilarityThreshold)
+	processLineByLine(query, model, *similarityThreshold, *contextBefore, *contextAfter, input, *printLineNumbers)
 }
