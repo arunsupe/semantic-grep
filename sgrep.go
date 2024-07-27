@@ -123,36 +123,108 @@ func toVector(tokens []string, model *Word2VecModel) []float32 {
 	return sum
 }
 
+/*
+processTokenStream processes the input text stream and finds semantically similar chunks to the given query.
+The function follows these steps:
+
+1. Convert the query to a vector representation.
+2. Initialize a token buffer and a scanner to read input tokens.
+3. For each token in the input stream:
+   a. Add the token to the buffer.
+   b. When the buffer reaches the window size:
+      - Check if the chunk has an acceptable amount of punctuation.
+      - Convert the chunk to a vector and calculate its similarity to the query.
+      - If the similarity is above the threshold and higher than the current best:
+        * Update the best chunk and its similarity score.
+      - Increment the count of processed tokens.
+      - If a full window's worth of tokens has been processed:
+        * Print the best chunk found (if any).
+        * Reset the best similarity and processed token count.
+      - Slide the window forward by removing the oldest tokens.
+4. After processing all tokens, print any remaining best chunk.
+
+This approach ensures that:
+- Only non-overlapping chunks are printed.
+- Each printed chunk is the most similar to the query within its window.
+- The sliding window mechanism is maintained, allowing for flexible matching.
+- Output is significantly reduced compared to printing every similar chunk.
+*/
 func processTokenStream(query string, model *Word2VecModel, window int, similarityThreshold float64) {
+	// Convert the query to a vector representation
 	queryVector := toVector(strings.Fields(query), model)
+
+	// Initialize a buffer to hold tokens, with capacity equal to the window size
 	tokenBuffer := make([]string, 0, window)
+
+	// Calculate the step size for sliding the window
+	// This determines how many tokens we move forward after processing each window
 	stepSize := window / 10
 
+	// Set up a scanner to read input token by token
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(bufio.ScanWords)
 
+	// Variables to keep track of the best matching chunk within a non-overlapping window
+	bestChunk := make([]string, 0, window)
+	bestSimilarity := 0.0
+	tokensProcessed := 0
+
+	// Main loop to process input tokens
 	for scanner.Scan() {
+		// Read the next token
 		token := scanner.Text()
+
+		// Add the token to our buffer
 		tokenBuffer = append(tokenBuffer, token)
 
+		// Process the buffer when it reaches the window size
 		if len(tokenBuffer) == window {
+			// Check if the chunk doesn't have too many punctuations
 			if countPunctuations(tokenBuffer) <= int(0.2*float64(window)) {
+				// Convert the current chunk to a vector
 				tokenVector := toVector(tokenBuffer, model)
+
+				// Calculate similarity between the chunk and the query
 				similarity := calculateSimilarity(queryVector, tokenVector)
 
-				if similarity > similarityThreshold {
-					fmt.Printf("Similarity: %.4f\n", similarity)
-					colorText(strings.Join(tokenBuffer, " "), int(similarity*5)+1)
-					fmt.Println()
+				// If this chunk is more similar than the previous best and above threshold,
+				// update our best chunk
+				if similarity > similarityThreshold && similarity > bestSimilarity {
+					bestSimilarity = similarity
+					bestChunk = make([]string, len(tokenBuffer))
+					copy(bestChunk, tokenBuffer)
 				}
 			}
 
-			// Move the window by step_size
+			// Increment our count of processed tokens
+			tokensProcessed += stepSize
+
+			// If we've processed a full window's worth of tokens,
+			// print the best chunk we've found (if any)
+			if tokensProcessed >= window {
+				if bestSimilarity > 0 {
+					fmt.Printf("Similarity: %.4f\n", bestSimilarity)
+					colorText(strings.Join(bestChunk, " "), int(bestSimilarity*5)+1)
+					fmt.Println()
+				}
+				// Reset our tracking variables for the next window
+				bestSimilarity = 0
+				tokensProcessed = 0
+			}
+
+			// Slide the window forward by removing processed tokens
 			tokenBuffer = tokenBuffer[stepSize:]
 		}
 	}
-}
 
+	// After processing all input, check if there's a remaining best chunk to print
+	// This handles cases where the input ends before completing another full window
+	if bestSimilarity > 0 {
+		fmt.Printf("Similarity: %.4f\n", bestSimilarity)
+		colorText(strings.Join(bestChunk, " "), int(bestSimilarity*5)+1)
+		fmt.Println()
+	}
+}
 func calculateSimilarity(queryVector, tokenVector []float32) float64 {
 	dotProduct := float64(0)
 	normQuery := float64(0)
