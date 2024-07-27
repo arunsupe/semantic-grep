@@ -32,7 +32,7 @@ Note: There are no external dependenceis; uses just the stdlib (and the model)
  curl -s 'https://gutenberg.ca/ebooks/hemingwaye-oldmanandthesea/hemingwaye-oldmanandthesea-00-t.txt' | bin/sgrep --similarity_threshold=0.50 --window=100 --query='promised fish' 
  ```
 - run `bin/sgrep` to see commandline flags
-- see the demo directory for an analysis of the program and it's output
+- see the [demo](./demo) directory for an analysis of the program and it's output
 
 ## Configuration
 sgrep can be configured using a JSON file. By default, it looks for `config.json` in the current directory. You can specify a different configuration file using the `-config` flag.
