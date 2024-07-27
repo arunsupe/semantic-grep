@@ -171,9 +171,10 @@ func processLineByLine(query string, model *Word2VecModel, similarityThreshold f
 			}
 		}
 
-		if err := scanner.Err(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
-		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
 	}
 }
 
