@@ -2,6 +2,28 @@
 
 sgrep is a command-line tool that performs semantic searches on text input using word embeddings. It's designed to find semantically similar matches to the query, going beyond simple string matching. The experience is designed to be similar to grep. 
 
+## Example Usage
+
+Search for words similar to "death" in Hemingway's "The Old Man and the Sea" with context and line numbers:
+
+```bash
+curl -s 'https://gutenberg.ca/ebooks/hemingwaye-oldmanandthesea/hemingwaye-oldmanandthesea-00-t.txt' | ./sgrep -C 2 -n -threshold 0.55 death
+```
+
+Output:
+![alt text](demo/image.png)
+
+This command:
+
+    - Fetches the text of "The Old Man and the Sea" from Project Gutenberg Canada
+    - Pipes the text to sgrep
+    - Searches for words semantically similar to "death"
+    - Uses a similarity threshold of 0.55 (-threshold 0.55)
+    - Displays 2 lines of context before and after each match (-C 2)
+    - Shows line numbers (-n)
+
+The output will show matches with their similarity scores, highlighted words, context, and line numbers.
+
 ## Features
 
 - Semantic search using Word2Vec embeddings
@@ -49,28 +71,6 @@ If no file is specified, sgrep reads from standard input.
 - `-B`: Number of lines to display before a match
 - `-C`: Number of lines to display before and after a match
 - `-n`: Print line numbers
-
-## Example
-
-Search for words similar to "death" in Hemingway's "The Old Man and the Sea" with context and line numbers:
-
-```bash
-curl -s 'https://gutenberg.ca/ebooks/hemingwaye-oldmanandthesea/hemingwaye-oldmanandthesea-00-t.txt' | ./sgrep -C 2 -n -threshold 0.55 death
-```
-
-Output:
-![alt text](demo/image.png)
-
-This command:
-
-    - Fetches the text of "The Old Man and the Sea" from Project Gutenberg Canada
-    - Pipes the text to sgrep
-    - Searches for words semantically similar to "death"
-    - Uses a similarity threshold of 0.55 (-threshold 0.55)
-    - Displays 2 lines of context before and after each match (-C 2)
-    - Shows line numbers (-n)
-
-The output will show matches with their similarity scores, highlighted words, context, and line numbers.
 
 ## Configuration
 
