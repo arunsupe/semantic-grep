@@ -36,6 +36,19 @@ The output will show matches with their similarity scores, highlighted words, co
 
 ## Installation
 
+**Using install script**:
+
+```bash
+# clone
+git clone https://github.com/arunsupe/semantic-grep.git
+cd semantic-grep
+
+# run install:
+#   compiles using the local go compiler, installs in user/bin, 
+#   downloads the model to $HOME/.config/semantic-grep
+#   makes config.json
+bash install.sh
+``` 
 **Binary**:
 
 1. Download the latest binary release
