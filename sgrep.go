@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/clipperhouse/uax29/words"
@@ -22,6 +23,31 @@ type Config struct {
 type Word2VecModel struct {
 	Vectors map[string][]float32
 	Size    int
+}
+
+func findConfigFile() string {
+	// Get the current working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Unable to determine current directory: %v\n", err)
+		cwd = "."
+	}
+
+	// List of possible config file locations
+	locations := []string{
+		filepath.Join(cwd, "config.json"), // Local directory
+		DefaultConfigPath,
+		os.ExpandEnv("$HOME/.config/semantic-grep/config.json"),
+		"/etc/semantic-grep/config.json",
+	}
+
+	for _, location := range locations {
+		if _, err := os.Stat(location); err == nil {
+			return location
+		}
+	}
+
+	return ""
 }
 
 func loadConfig(configPath string) (*Config, error) {
@@ -238,19 +264,50 @@ func main() {
 		input = os.Stdin
 	}
 
-	// Load configuration from file
-	config, err := loadConfig(DefaultConfigPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+	// Find the config file
+	configPath := findConfigFile()
+
+	// If config file is found, load it
+	if configPath != "" {
+		config, err := loadConfig(configPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading config from %s: %v\n", configPath, err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(os.Stderr, "Using configuration file: %s\n", configPath)
+
+		// Use model path from config if not provided in command line
+		if *modelPath == "" {
+			*modelPath = config.ModelPath
+		}
+	}
+
+	// Check if model path is provided
+	if *modelPath == "" {
+		fmt.Fprintln(os.Stderr, "Error: Model path is required. Please provide it via config file or -model_path flag.")
+		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	// Override modelPath if provided via command line
-	if *modelPath != "" {
-		config.ModelPath = *modelPath
-	}
+	// if configPath == "" {
+	//     fmt.Fprintln(os.Stderr, "Error: No configuration file found")
+	//     os.Exit(1)
+	// }
 
-	model, err := loadWord2VecModel(config.ModelPath)
+	// // Load configuration from file
+	// config, err := loadConfig(configPath)
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+	// 	os.Exit(1)
+	// }
+
+	// // Override modelPath if provided via command line
+	// if *modelPath != "" {
+	// 	config.ModelPath = *modelPath
+	// }
+
+	// Load the model
+	model, err := loadWord2VecModel(*modelPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading model: %v\n", err)
 		os.Exit(1)
