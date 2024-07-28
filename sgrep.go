@@ -112,6 +112,41 @@ func getVectorEmbedding(token string, model *Word2VecModel) []float32 {
 	return vec
 }
 
+type SimilarityCache struct {
+	cache map[string]float64
+}
+
+func NewSimilarityCache() *SimilarityCache {
+	return &SimilarityCache{
+		cache: make(map[string]float64),
+	}
+}
+
+func (sc *SimilarityCache) MemoizedCalculateSimilarity(queryToken, token string, queryVector, tokenVector []float32) float64 {
+	// Create key from tokens
+	key := queryToken + "|" + token
+
+	// Check if the key length is greater than 30 characters
+	// limits the cache size from growing too large
+	if len(key) > 30 {
+		// Directly calculate similarity without caching
+		return calculateSimilarity(queryVector, tokenVector)
+	}
+
+	// Check if the result is already in the cache
+	if result, found := sc.cache[key]; found {
+		return result
+	}
+
+	// If not in cache, calculate the similarity
+	result := calculateSimilarity(queryVector, tokenVector)
+
+	// Store the result in the cache
+	sc.cache[key] = result
+
+	return result
+}
+
 func calculateSimilarity(vec1, vec2 []float32) float64 {
 	dotProduct := float64(0)
 	norm1 := float64(0)
@@ -137,16 +172,21 @@ func colorText(text string, color string) string {
 
 func processLineByLine(query string, model *Word2VecModel, similarityThreshold float64, contextBefore, contextAfter int, input *os.File, printLineNumbers bool, ignoreCase bool) {
 	var queryVector []float32
+	var queryTokenToCheck string
 	if ignoreCase {
-		queryVector = getVectorEmbedding(strings.ToLower(query), model)
+		queryTokenToCheck = strings.ToLower(query)
 	} else {
-		queryVector = getVectorEmbedding(query, model)
+		queryTokenToCheck = query
 	}
+	queryVector = getVectorEmbedding(queryTokenToCheck, model)
 
 	scanner := bufio.NewScanner(input)
 	lineNumber := 0
 	var contextBuffer []string
 	var contextLineNumbers []int
+
+	// Initialize the similarity cache
+	similarityCache := NewSimilarityCache()
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -167,7 +207,7 @@ func processLineByLine(query string, model *Word2VecModel, similarityThreshold f
 			}
 
 			tokenVector := getVectorEmbedding(tokenToCheck, model)
-			similarity := calculateSimilarity(queryVector, tokenVector)
+			similarity := similarityCache.MemoizedCalculateSimilarity(queryTokenToCheck, tokenToCheck, queryVector, tokenVector)
 			if similarity > similarityThreshold {
 				highlightedLine = strings.Replace(line, token, colorText(token, "red"), -1)
 				matched = true
