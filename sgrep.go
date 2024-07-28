@@ -107,8 +107,14 @@ func colorText(text string, color string) string {
 	}
 }
 
-func processLineByLine(query string, model *Word2VecModel, similarityThreshold float64, contextBefore, contextAfter int, input *os.File, printLineNumbers bool) {
-	queryVector := getVectorEmbedding(query, model)
+func processLineByLine(query string, model *Word2VecModel, similarityThreshold float64, contextBefore, contextAfter int, input *os.File, printLineNumbers bool, ignoreCase bool) {
+	var queryVector []float32
+	if ignoreCase {
+		queryVector = getVectorEmbedding(strings.ToLower(query), model)
+	} else {
+		queryVector = getVectorEmbedding(query, model)
+	}
+
 	scanner := bufio.NewScanner(input)
 	lineNumber := 0
 	var contextBuffer []string
@@ -123,7 +129,14 @@ func processLineByLine(query string, model *Word2VecModel, similarityThreshold f
 		var similarityScore float64
 
 		for _, token := range tokens {
-			tokenVector := getVectorEmbedding(token, model)
+			var tokenToCheck string
+			if ignoreCase {
+				tokenToCheck = strings.ToLower(token)
+			} else {
+				tokenToCheck = token
+			}
+
+			tokenVector := getVectorEmbedding(tokenToCheck, model)
 			similarity := calculateSimilarity(queryVector, tokenVector)
 			if similarity > similarityThreshold {
 				highlightedLine = strings.Replace(line, token, colorText(token, "red"), -1)
@@ -187,6 +200,7 @@ func main() {
 	contextAfter := flag.Int("B", 0, "Number of lines after matching line")
 	contextBoth := flag.Int("C", 0, "Number of lines before and after matching line")
 	printLineNumbers := flag.Bool("n", false, "Print line numbers")
+	ignoreCase := flag.Bool("i", false, "Ignore case. Note: word2vec is case-sensitive. Ignoring case may lead to unexpected results")
 
 	flag.Parse()
 
@@ -237,5 +251,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	processLineByLine(query, model, *similarityThreshold, *contextBefore, *contextAfter, input, *printLineNumbers)
+	processLineByLine(query, model, *similarityThreshold, *contextBefore, *contextAfter, input, *printLineNumbers, *ignoreCase)
+
 }
