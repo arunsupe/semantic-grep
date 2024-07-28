@@ -1,4 +1,3 @@
 {
     "model_path": "models/googlenews-slim/GoogleNews-vectors-negative300-SLIM.bin",
-    "similarity_threshold": 0.3
 }
