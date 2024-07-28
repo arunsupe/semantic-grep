@@ -1,0 +1,4 @@
+github.com/clipperhouse/uax29 v1.13.0 h1:5q58IRS9gBATd+NtnPXAmul5PLTGFeQ3lv0C51zhIEk=
+github.com/clipperhouse/uax29 v1.13.0/go.mod h1:paNABhygWmmjkg0ROxKQoenJAX4dM9AS8biVkXmAK0c=
+golang.org/x/text v0.16.0 h1:a94ExnEXNtEwYLGJSIUxnWoxoRz/ZcCsV63ROupILh4=
+golang.org/x/text v0.16.0/go.mod h1:GhwF1Be+LQoKShO3cGOHzqOgRrGaYc9AvblQOmPVHnI=
