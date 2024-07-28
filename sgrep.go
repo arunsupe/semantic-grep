@@ -9,6 +9,8 @@ import (
 	"math"
 	"os"
 	"strings"
+
+	"github.com/clipperhouse/uax29/words"
 )
 
 const DefaultConfigPath = "config.json"
@@ -123,12 +125,14 @@ func processLineByLine(query string, model *Word2VecModel, similarityThreshold f
 	for scanner.Scan() {
 		line := scanner.Text()
 		lineNumber++
-		tokens := strings.Fields(line)
 		matched := false
 		var highlightedLine string
 		var similarityScore float64
 
-		for _, token := range tokens {
+		tokens := words.NewSegmenter(scanner.Bytes())
+
+		for tokens.Next() {
+			token := tokens.Text()
 			var tokenToCheck string
 			if ignoreCase {
 				tokenToCheck = strings.ToLower(token)
@@ -136,7 +140,7 @@ func processLineByLine(query string, model *Word2VecModel, similarityThreshold f
 				tokenToCheck = token
 			}
 
-			tokenVector := getVectorEmbedding(tokenToCheck, model)
+			tokenVector := getVectorEmbedding(token, model)
 			similarity := calculateSimilarity(queryVector, tokenVector)
 			if similarity > similarityThreshold {
 				highlightedLine = strings.Replace(line, token, colorText(token, "red"), -1)
@@ -179,6 +183,7 @@ func processLineByLine(query string, model *Word2VecModel, similarityThreshold f
 				}
 			}
 		}
+
 	}
 
 	if err := scanner.Err(); err != nil {
