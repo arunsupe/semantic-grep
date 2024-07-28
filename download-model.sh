@@ -7,9 +7,14 @@ save_path="models/googlenews-slim/GoogleNews-vectors-negative300-SLIM.bin"
 # Create directory (if it doesn't exist)
 mkdir -p "$(dirname "$save_path")"
 
-# Download the model with progress bar (simulated)
+# Download the model
 echo "Downloading..."
-wget -O "$save_path.gz" -q --show-progress "$model_url"
+
+if command -v wget > /dev/null; then
+    wget -O "$save_path.gz" -q --show-progress "$model_url"
+else
+    curl -L -s -o "$save_path.gz" "$model_url"
+fi
 
 # Decompress the file
 gunzip "$save_path.gz"

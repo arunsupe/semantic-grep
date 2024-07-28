@@ -1,6 +1,6 @@
 module sgrep
 
-go 1.22.5
+go 1.23
 
 require github.com/clipperhouse/uax29 v1.13.0
 
