@@ -289,23 +289,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// if configPath == "" {
-	//     fmt.Fprintln(os.Stderr, "Error: No configuration file found")
-	//     os.Exit(1)
-	// }
-
-	// // Load configuration from file
-	// config, err := loadConfig(configPath)
-	// if err != nil {
-	// 	fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
-	// 	os.Exit(1)
-	// }
-
-	// // Override modelPath if provided via command line
-	// if *modelPath != "" {
-	// 	config.ModelPath = *modelPath
-	// }
-
 	// Load the model
 	model, err := loadWord2VecModel(*modelPath)
 	if err != nil {
