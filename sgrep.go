@@ -140,7 +140,7 @@ func processLineByLine(query string, model *Word2VecModel, similarityThreshold f
 				tokenToCheck = token
 			}
 
-			tokenVector := getVectorEmbedding(token, model)
+			tokenVector := getVectorEmbedding(tokenToCheck, model)
 			similarity := calculateSimilarity(queryVector, tokenVector)
 			if similarity > similarityThreshold {
 				highlightedLine = strings.Replace(line, token, colorText(token, "red"), -1)
