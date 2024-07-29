@@ -1,6 +1,6 @@
 # sgrep - Semantic Grep
 
-sgrep is a command-line tool that performs semantic searches on text input using word embeddings. It's designed to find semantically similar matches to the query, going beyond simple string matching. The experience is designed to be similar to grep. 
+sgrep is a command-line tool that performs semantic searches on text input using word embeddings. It's designed to find semantically similar matches to the query, going beyond simple string matching. Supports word2vec and glove models. The experience is designed to be similar to grep. 
 
 ## Example Usage
 
@@ -27,7 +27,7 @@ The output will show matches with their similarity scores, highlighted words, co
 
 ## Features
 
-- Semantic search using Word2Vec embeddings
+- Semantic search using word embeddings (word2vec and glove support out of the box)
 - Configurable similarity threshold
 - Context display (before and after matching lines)
 - Color-coded output for matched words and line numbers
@@ -65,7 +65,7 @@ cd semantic-grep
 # build
 go build -o sgrep
 
-# download a word2vec model using this helper script (see "Word2Vec Model" below)
+# download a word2vec model using this helper script (see "Word Embedding Model" below)
 bash download-model.sh
 ```
 
@@ -98,12 +98,18 @@ Example `config.json`:
 }
 ```
 
-## Word2Vec Model
-- sgrep requires a Word2Vec model in binary format. You can use pre-trained models like Google's Word2Vec model or train your own using tools like gensim. 
+## Word Embedding Model
+`sgrep` requires a word embedding model in __binary__ format. You can use pre-trained models (like Google's Word2Vec, or Stanford NLP's GloVe) or train your own using tools like gensim. 
 - Download and unzip the .bin file locally and update the config.json.
     - Google's Word2Vec: from https://github.com/mmihaltz/word2vec-GoogleNews-vectors
     - A slim version: GoogleNews-vectors-negative300-SLIM.bin.gz model from https://github.com/eyaler/word2vec-slim/ (thanks to eyaler)
+    - Stanford NLP group's Global Vectors for Word Representation (glove) model is in text format at the [source](https://nlp.stanford.edu/projects/glove/). The 6 billion tokens, 400K vocab, uncased, 300d model is mirrored (in the correct binary format) in this repo's `models/glove` directory. 
 - download-model.sh is a simple helper script to download the small word2vec model hosted by eyaler and save it in models/googlenews-slim/ directory
+
+
+## A word about word2vec vs glove
+Word2Vec focuses on local context (words occuring close to each other in text) while GloVe leverages global co-occurrence statistics ([explaination](https://machinelearninginterview.com/topics/natural-language-processing/what-is-the-difference-between-word2vec-and-glove/)). For practical purposes, they seem equivalent.
+
 
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
