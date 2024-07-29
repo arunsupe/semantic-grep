@@ -103,7 +103,7 @@ Example `config.json`:
 - Download and unzip the .bin file locally and update the config.json.
     - Google's Word2Vec: from https://github.com/mmihaltz/word2vec-GoogleNews-vectors
     - A slim version: GoogleNews-vectors-negative300-SLIM.bin.gz model from https://github.com/eyaler/word2vec-slim/ (thanks to eyaler)
-    - Stanford NLP group's Global Vectors for Word Representation (glove) model is in text format at the [source](https://nlp.stanford.edu/projects/glove/). The 6 billion tokens, 400K vocab, uncased, 300d model is mirrored (in the correct binary format) in this repo's `models/glove` directory. 
+    - Stanford NLP group's Global Vectors for Word Representation (glove) model is in text format at the [source](https://nlp.stanford.edu/projects/glove/). Note: this has to be converted to binary format. I am working on making this available for download. 
 - download-model.sh is a simple helper script to download the small word2vec model hosted by eyaler and save it in models/googlenews-slim/ directory
 
 
