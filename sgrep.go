@@ -1,268 +1,18 @@
+/* Process command line arguments and call the processor to
+process the input file line by line.
+*/
+
 package main
 
 import (
-	"bufio"
-	"encoding/binary"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"math"
 	"os"
-	"path/filepath"
-	"strings"
 
-	"github.com/clipperhouse/uax29/words"
+	"sgrep/modules/config"
+	"sgrep/modules/model"
+	"sgrep/modules/processor"
 )
-
-const DefaultConfigPath = "config.json"
-
-type Config struct {
-	ModelPath string `json:"model_path"`
-}
-
-type Word2VecModel struct {
-	Vectors map[string][]float32
-	Size    int
-}
-
-func findConfigFile() string {
-	// Get the current working directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Unable to determine current directory: %v\n", err)
-		cwd = "."
-	}
-
-	// List of possible config file locations
-	locations := []string{
-		filepath.Join(cwd, "config.json"), // Local directory
-		DefaultConfigPath,
-		os.ExpandEnv("$HOME/.config/semantic-grep/config.json"),
-		"/etc/semantic-grep/config.json",
-	}
-
-	for _, location := range locations {
-		if _, err := os.Stat(location); err == nil {
-			return location
-		}
-	}
-
-	return ""
-}
-
-func loadConfig(configPath string) (*Config, error) {
-	file, err := os.Open(configPath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	var config Config
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(&config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
-
-func loadWord2VecModel(modelPath string) (*Word2VecModel, error) {
-	file, err := os.Open(modelPath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	reader := bufio.NewReader(file)
-
-	// Read header
-	var vocabSize, vectorSize int
-	fmt.Fscanf(reader, "%d %d\n", &vocabSize, &vectorSize)
-
-	model := &Word2VecModel{
-		Vectors: make(map[string][]float32, vocabSize),
-		Size:    vectorSize,
-	}
-
-	for i := 0; i < vocabSize; i++ {
-		word, err := reader.ReadString(' ')
-		if err != nil {
-			return nil, err
-		}
-		word = strings.TrimSpace(word)
-
-		vector := make([]float32, vectorSize)
-		for j := 0; j < vectorSize; j++ {
-			err := binary.Read(reader, binary.LittleEndian, &vector[j])
-			if err != nil {
-				return nil, err
-			}
-		}
-		model.Vectors[word] = vector
-	}
-
-	return model, nil
-}
-
-func getVectorEmbedding(token string, model *Word2VecModel) []float32 {
-	vec, ok := model.Vectors[token]
-	if !ok {
-		return make([]float32, model.Size) // Handle OOV words
-	}
-	return vec
-}
-
-type SimilarityCache struct {
-	cache map[string]float64
-}
-
-func NewSimilarityCache() *SimilarityCache {
-	return &SimilarityCache{
-		cache: make(map[string]float64),
-	}
-}
-
-func (sc *SimilarityCache) MemoizedCalculateSimilarity(queryToken, token string, queryVector, tokenVector []float32) float64 {
-	// Create key from tokens
-	key := queryToken + "|" + token
-
-	// Check if the key length is greater than 30 characters
-	// limits the cache size from growing too large
-	if len(key) > 30 {
-		// Directly calculate similarity without caching
-		return calculateSimilarity(queryVector, tokenVector)
-	}
-
-	// Check if the result is already in the cache
-	if result, found := sc.cache[key]; found {
-		return result
-	}
-
-	// If not in cache, calculate the similarity
-	result := calculateSimilarity(queryVector, tokenVector)
-
-	// Store the result in the cache
-	sc.cache[key] = result
-
-	return result
-}
-
-func calculateSimilarity(vec1, vec2 []float32) float64 {
-	dotProduct := float64(0)
-	norm1 := float64(0)
-	norm2 := float64(0)
-	for i := range vec1 {
-		dotProduct += float64(vec1[i] * vec2[i])
-		norm1 += float64(vec1[i] * vec1[i])
-		norm2 += float64(vec2[i] * vec2[i])
-	}
-	return dotProduct / (math.Sqrt(norm1) * math.Sqrt(norm2))
-}
-
-func colorText(text string, color string) string {
-	switch color {
-	case "red":
-		return fmt.Sprintf("\033[91m%s\033[0m", text)
-	case "green":
-		return fmt.Sprintf("\033[92m%s\033[0m", text)
-	default:
-		return text
-	}
-}
-
-func processLineByLine(query string, model *Word2VecModel, similarityThreshold float64, contextBefore, contextAfter int, input *os.File, printLineNumbers bool, ignoreCase bool) {
-	var queryVector []float32
-	var queryTokenToCheck string
-	if ignoreCase {
-		queryTokenToCheck = strings.ToLower(query)
-	} else {
-		queryTokenToCheck = query
-	}
-	queryVector = getVectorEmbedding(queryTokenToCheck, model)
-
-	scanner := bufio.NewScanner(input)
-	lineNumber := 0
-	var contextBuffer []string
-	var contextLineNumbers []int
-
-	// Initialize the similarity cache
-	similarityCache := NewSimilarityCache()
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		lineNumber++
-		matched := false
-		var highlightedLine string
-		var similarityScore float64
-
-		tokens := words.NewSegmenter(scanner.Bytes())
-
-		for tokens.Next() {
-			token := tokens.Text()
-			var tokenToCheck string
-			if ignoreCase {
-				tokenToCheck = strings.ToLower(token)
-			} else {
-				tokenToCheck = token
-			}
-
-			tokenVector := getVectorEmbedding(tokenToCheck, model)
-			similarity := similarityCache.MemoizedCalculateSimilarity(queryTokenToCheck, tokenToCheck, queryVector, tokenVector)
-			if similarity > similarityThreshold {
-				highlightedLine = strings.Replace(line, token, colorText(token, "red"), -1)
-				matched = true
-				similarityScore = similarity
-				break
-			}
-		}
-
-		if matched {
-			// Print similarity score
-			fmt.Printf("Similarity: %.4f\n", similarityScore)
-
-			// Print context before matching line
-			for i, ctxLine := range contextBuffer {
-				printLine(ctxLine, contextLineNumbers[i], printLineNumbers)
-			}
-			contextBuffer = nil // Clear context buffer after printing
-			contextLineNumbers = nil
-
-			// Print matching line
-			printLine(highlightedLine, lineNumber, printLineNumbers)
-
-			// Collect context after matching line
-			for i := 0; i < contextAfter && scanner.Scan(); i++ {
-				lineNumber++
-				printLine(scanner.Text(), lineNumber, printLineNumbers)
-			}
-
-			// Print line separator after each match
-			fmt.Println("--")
-		} else {
-			// Maintain context buffer
-			if contextBefore > 0 {
-				contextBuffer = append(contextBuffer, line)
-				contextLineNumbers = append(contextLineNumbers, lineNumber)
-				if len(contextBuffer) > contextBefore {
-					contextBuffer = contextBuffer[1:]
-					contextLineNumbers = contextLineNumbers[1:]
-				}
-			}
-		}
-
-	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
-	}
-}
-
-func printLine(line string, lineNumber int, printLineNumbers bool) {
-	if printLineNumbers {
-		fmt.Printf("%s:", colorText(fmt.Sprintf("%d", lineNumber), "green"))
-	}
-	fmt.Println(line)
-}
 
 func main() {
 	modelPath := flag.String("model_path", "", "Path to the Word2Vec model file")
@@ -275,13 +25,11 @@ func main() {
 
 	flag.Parse()
 
-	// Override contextBefore and contextAfter if contextBoth is specified
 	if *contextBoth > 0 {
 		*contextBefore = *contextBoth
 		*contextAfter = *contextBoth
 	}
 
-	// Remaining arguments are the query and optional filename
 	args := flag.Args()
 	if len(args) < 1 {
 		fmt.Fprintln(os.Stderr, "Error: query is required")
@@ -304,38 +52,32 @@ func main() {
 		input = os.Stdin
 	}
 
-	// Find the config file
-	configPath := findConfigFile()
+	configPath := config.FindConfigFile()
 
-	// If config file is found, load it
 	if configPath != "" {
-		config, err := loadConfig(configPath)
+		conf, err := config.LoadConfig(configPath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading config from %s: %v\n", configPath, err)
 			os.Exit(1)
 		}
 		fmt.Fprintf(os.Stderr, "Using configuration file: %s\n", configPath)
 
-		// Use model path from config if not provided in command line
 		if *modelPath == "" {
-			*modelPath = config.ModelPath
+			*modelPath = conf.ModelPath
 		}
 	}
 
-	// Check if model path is provided
 	if *modelPath == "" {
 		fmt.Fprintln(os.Stderr, "Error: Model path is required. Please provide it via config file or -model_path flag.")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	// Load the model
-	model, err := loadWord2VecModel(*modelPath)
+	w2vModel, err := model.LoadWord2VecModel(*modelPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading model: %v\n", err)
 		os.Exit(1)
 	}
 
-	processLineByLine(query, model, *similarityThreshold, *contextBefore, *contextAfter, input, *printLineNumbers, *ignoreCase)
-
+	processor.ProcessLineByLine(query, w2vModel, *similarityThreshold, *contextBefore, *contextAfter, input, *printLineNumbers, *ignoreCase)
 }
