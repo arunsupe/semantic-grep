@@ -94,7 +94,7 @@ If no file is specified, sgrep reads from standard input.
 
 ## Configuration
 
-`sgrep` can be configured using a JSON file. By default, it looks for `config.json` in the current directory.
+`sgrep` can be configured using a JSON file. By default, it looks for `config.json` in the current directory, "$HOME/.config/semantic-grep/config.json" and "/etc/semantic-grep/config.json".
 
 
 ## Word Embedding Model
