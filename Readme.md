@@ -84,7 +84,7 @@ If no file is specified, sgrep reads from standard input.
 
 ### Command-line Options
 
-- `-model_path`: Path to the Word2Vec model file (overrides config file)
+- `-model_path`: Path to the Word2Vec model file ('models/glove/glove.6B.300d.bin'). Overrides config file.
 - `-threshold`: Similarity threshold for matching (default: 0.7)
 - `-A`: Number of lines to display after a match
 - `-B`: Number of lines to display before a match
@@ -99,17 +99,14 @@ Example `config.json`:
 
 ```json
 {
-    "model_path": "path/to/your/word2vec/model.bin"
+    "model_path": "models/glove/glove.6B.300d.bin"
 }
 ```
 
 ## Word Embedding Model
-`sgrep` requires a word embedding model in __binary__ format. You can use pre-trained models (like Google's Word2Vec, or Stanford NLP's GloVe) or train your own using tools like gensim. 
-- Download and unzip the .bin file locally and update the config.json.
-    - Google's Word2Vec: from https://github.com/mmihaltz/word2vec-GoogleNews-vectors
-    - A slim version: GoogleNews-vectors-negative300-SLIM.bin.gz model from https://github.com/eyaler/word2vec-slim/ (thanks to eyaler)
-    - Stanford NLP group's Global Vectors for Word Representation (glove) model is in text format at the [source](https://nlp.stanford.edu/projects/glove/). Note: this has to be converted to binary format. I am working on making this available for download. 
-- download-model.sh is a simple helper script to download the small word2vec model hosted by eyaler and save it in models/googlenews-slim/ directory
+`sgrep` requires a word embedding model in __binary__ format. The default model loader expects vectors of dimension 300, as 32 bit floats or as 8 bit ints (quantized). It uses the model file's extension to determine the type (.bin, .8bit.int). Compatible model files are provided in this repo ([models/](models/)). Download one of the .bin files from the `models/` directory and update the path in config.json.
+
+Alternatively, you can use pre-trained models (like Google's Word2Vec) or train your own using tools like gensim. Note though that there does not seem to be a standardized binary format (google's is different to facebook's fasttext or gensim's default _save()_). For `sgrep`, because efficiently loading the large model is key for performance, I have elected to keep the simplest format. 
 
 
 ## A word about word2vec vs glove
@@ -121,3 +118,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Sources of models in the web
+- Google's Word2Vec: from https://github.com/mmihaltz/word2vec-GoogleNews-vectors
+- A slim version of the above: GoogleNews-vectors-negative300-SLIM.bin.gz model from https://github.com/eyaler/word2vec-slim/
+- Stanford NLP group's Global Vectors for Word Representation (glove) model [source](https://nlp.stanford.edu/projects/glove/): binary version is in mirrored in [models/glove/](models/glove/).  
