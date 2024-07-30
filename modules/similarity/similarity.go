@@ -25,7 +25,8 @@ func NewSimilarityCache() *Cache {
 }
 
 func (c *Cache) MemoizedCalculateSimilarity(queryToken, token string, queryVector, tokenVector interface{}) float64 {
-	key := queryToken + "|" + token
+	// similarity is a commutative operation, we can cache the result for any order of operands
+	key := min(queryToken, token) + "|" + max(queryToken, token)
 
 	if cachedValue, exists := c.cache[key]; exists {
 		return cachedValue
