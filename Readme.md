@@ -1,6 +1,6 @@
 # sgrep - Semantic Grep
 
-sgrep is a command-line tool that performs semantic searches on text input using word embeddings. It's designed to find semantically similar matches to the query, going beyond simple string matching. Supports word2vec and glove models. The experience is designed to be similar to grep. 
+sgrep is a command-line tool that performs semantic searches on text input using word embeddings. It's designed to find semantically similar matches to the query, going beyond simple string matching. Supports multiple languages. The experience is designed to be similar to grep. 
 
 ## Example Usage
 
@@ -27,11 +27,12 @@ The output will show matches with their similarity scores, highlighted words, co
 
 ## Features
 
-- Semantic search using word embeddings (word2vec and glove support out of the box)
+- Semantic search using word embeddings 
 - Configurable similarity threshold
 - Context display (before and after matching lines)
-- Color-coded output for matched words and line numbers
-- Support for reading from files or standard input
+- Color-coded output 
+- Support for multiple languages 
+- Read from files or stdin
 - Configurable via JSON file and command-line arguments
 
 ## Installation
@@ -93,24 +94,34 @@ If no file is specified, sgrep reads from standard input.
 
 ## Configuration
 
-- sgrep can be configured using a JSON file. By default, it looks for `config.json` in the current directory.
+`sgrep` can be configured using a JSON file. By default, it looks for `config.json` in the current directory.
 
-Example `config.json`:
-
-```json
-{
-    "model_path": "models/glove/glove.6B.300d.bin"
-}
-```
 
 ## Word Embedding Model
-`sgrep` requires a word embedding model in __binary__ format. The default model loader expects vectors of dimension 300, as 32 bit floats or as 8 bit ints (quantized). It uses the model file's extension to determine the type (.bin, .8bit.int). Compatible model files are provided in this repo ([models/](models/)). Download one of the .bin files from the `models/` directory and update the path in config.json.
 
+### Quick start:
+`sgrep` requires a word embedding model in __binary__ format. The default model loader uses the model file's extension to determine the type (.bin, .8bit.int). A few compatible model files are provided in this repo ([models/](models/)). Download one of the .bin files from the `models/` directory and update the path in config.json.
+
+
+### Support for multiple languages:
+Facebook's fasttext group have published word vectors in [157 languages](https://fasttext.cc/docs/en/crawl-vectors.html) - an amazing resource. I have provided a small go program, [fasttext-to-bin](model_processing_utils/), to make `sgrep` compatible binary models from this. (note: use the text files with "__.vec.gz__" extension, not the binary ".bin.gz" files)
+
+```bash
+# e.g., for a French model:
+curl -s 'https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fr.300.vec.gz' | gunzip -c | ./fasttext-to-bin -input - -output models/fasttext/cc.fr.300.bin
+
+# use it like so:
+# curl -s 'https://www.gutenberg.org/cache/epub/17989/pg17989.txt' \
+#    | bin/sgrep.quantized.cached -C 2 -n -threshold 0.55 \
+#           -model_path model_processing_utils/cc.fr.300.bin 'château'
+```
+
+### Roll your own:
 Alternatively, you can use pre-trained models (like Google's Word2Vec) or train your own using tools like gensim. Note though that there does not seem to be a standardized binary format (google's is different to facebook's fasttext or gensim's default _save()_). For `sgrep`, because efficiently loading the large model is key for performance, I have elected to keep the simplest format. 
 
 
-## A word about word2vec vs glove
-Word2Vec focuses on local context (words occuring close to each other in text) while GloVe leverages global co-occurrence statistics ([explaination](https://machinelearninginterview.com/topics/natural-language-processing/what-is-the-difference-between-word2vec-and-glove/)). For practical purposes, they seem equivalent.
+## A word about performance of the different embedding models
+Different models define "similarity" differently ([explaination](https://machinelearninginterview.com/topics/natural-language-processing/what-is-the-difference-between-word2vec-and-glove/)). However, for practical purposes, they seem equivalent enough.
 
 
 ## Contributing
@@ -137,3 +148,4 @@ This project uses a processed version of the fasttext word vectors, which is sto
 - Google's Word2Vec: from https://github.com/mmihaltz/word2vec-GoogleNews-vectors
 - A slim version of the above: GoogleNews-vectors-negative300-SLIM.bin.gz model from https://github.com/eyaler/word2vec-slim/
 - Stanford NLP group's Global Vectors for Word Representation (glove) model [source](https://nlp.stanford.edu/projects/glove/): binary version is in mirrored in [models/glove/](models/glove/).  
+- Facebook fasttext vectors: https://fasttext.cc/docs/en/crawl-vectors.html
