@@ -8,42 +8,45 @@ import (
 	"math"
 )
 
-// SimilarityCache is a cache for storing similarity values between tokens
-type SimilarityCache struct {
+type SimilarityCache interface {
+	MemoizedCalculateSimilarity(queryToken, token string, queryVector, tokenVector interface{}) float64
+}
+
+// Implement the interface for your existing cache structure
+type Cache struct {
 	cache map[string]float64
 }
 
-// NewSimilarityCache creates a new SimilarityCache
-func NewSimilarityCache() *SimilarityCache {
-	return &SimilarityCache{
+// NewSimilarityCache creates a new cache
+func NewSimilarityCache() *Cache {
+	return &Cache{
 		cache: make(map[string]float64),
 	}
 }
 
-// MemoizedCalculateSimilarity calculates the similarity between two tokens
-func (sc *SimilarityCache) MemoizedCalculateSimilarity(queryToken, token string, queryVector, tokenVector []float32) float64 {
-	// Create a key for the cache by concatenating the query and input tokens
+func (c *Cache) MemoizedCalculateSimilarity(queryToken, token string, queryVector, tokenVector interface{}) float64 {
 	key := queryToken + "|" + token
 
-	// If the key is too long, don't cache the result
-	if len(key) > 30 {
-		return calculateSimilarity(queryVector, tokenVector)
+	if cachedValue, exists := c.cache[key]; exists {
+		return cachedValue
 	}
 
-	// Check if the result is already in the cache
-	if result, found := sc.cache[key]; found {
-		return result
+	var similarity float64
+	switch qv := queryVector.(type) {
+	case []float32:
+		similarity = calculateSimilarity32bit(qv, tokenVector.([]float32))
+	case []int8:
+		similarity = calculateSimilarity8bit(qv, tokenVector.([]int8))
+	default:
+		panic("Unsupported vector type")
 	}
 
-	// Calculate the similarity and store it in the cache
-	result := calculateSimilarity(queryVector, tokenVector)
-	sc.cache[key] = result
-
-	return result
+	c.cache[key] = similarity
+	return similarity
 }
 
 // calculateSimilarity calculates the cosine similarity between two vectors
-func calculateSimilarity(vec1, vec2 []float32) float64 {
+func calculateSimilarity32bit(vec1, vec2 []float32) float64 {
 	dotProduct := float64(0)
 	norm1 := float64(0)
 	norm2 := float64(0)
@@ -53,4 +56,17 @@ func calculateSimilarity(vec1, vec2 []float32) float64 {
 		norm2 += float64(vec2[i] * vec2[i])
 	}
 	return dotProduct / (math.Sqrt(norm1) * math.Sqrt(norm2))
+}
+
+func calculateSimilarity8bit(vec1, vec2 []int8) float64 {
+	var dotProduct int32
+	var norm1, norm2 int32
+
+	for i := range vec1 {
+		dotProduct += int32(vec1[i]) * int32(vec2[i])
+		norm1 += int32(vec1[i]) * int32(vec1[i])
+		norm2 += int32(vec2[i]) * int32(vec2[i])
+	}
+
+	return float64(dotProduct) / (math.Sqrt(float64(norm1)) * math.Sqrt(float64(norm2)))
 }

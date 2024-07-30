@@ -27,25 +27,20 @@ import (
 	"github.com/clipperhouse/uax29/words"
 )
 
-// ProcessLineByLine processes the input file line by line, comparing each token
-// to the query and printing matches with context
-func ProcessLineByLine(query string, w2vModel *model.Word2VecModel, similarityThreshold float64, contextBefore, contextAfter int, input *os.File, printLineNumbers bool, ignoreCase bool) {
+func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache similarity.SimilarityCache, similarityThreshold float64, contextBefore, contextAfter int, input *os.File, printLineNumbers bool, ignoreCase bool) {
 	// Prepare query vector
-	var queryVector []float32
 	var queryTokenToCheck string
 	if ignoreCase {
 		queryTokenToCheck = strings.ToLower(query)
 	} else {
 		queryTokenToCheck = query
 	}
-	queryVector = model.GetVectorEmbedding(queryTokenToCheck, w2vModel)
+	queryVector := w2vModel.GetEmbedding(queryTokenToCheck)
 
 	scanner := bufio.NewScanner(input)
 	lineNumber := 0
 	var contextBuffer []string
 	var contextLineNumbers []int
-
-	similarityCache := similarity.NewSimilarityCache()
 
 	// Process each line
 	for scanner.Scan() {
@@ -67,7 +62,7 @@ func ProcessLineByLine(query string, w2vModel *model.Word2VecModel, similarityTh
 			}
 
 			// Calculate similarity and check threshold
-			tokenVector := model.GetVectorEmbedding(tokenToCheck, w2vModel)
+			tokenVector := w2vModel.GetEmbedding(tokenToCheck)
 			similarity := similarityCache.MemoizedCalculateSimilarity(queryTokenToCheck, tokenToCheck, queryVector, tokenVector)
 			if similarity > similarityThreshold {
 				highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
