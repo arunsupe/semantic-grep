@@ -112,7 +112,7 @@ curl -s 'https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fr.300.vec.gz'
 
 # use it like so:
 # curl -s 'https://www.gutenberg.org/cache/epub/17989/pg17989.txt' \
-#    | bin/sgrep.quantized.cached -C 2 -n -threshold 0.55 \
+#    | sgrep -C 2 -n -threshold 0.55 \
 #           -model_path model_processing_utils/cc.fr.300.bin 'château'
 ```
 
