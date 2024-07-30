@@ -116,8 +116,18 @@ Word2Vec focuses on local context (words occuring close to each other in text) w
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+
+## License and attribution:
+The code in this project is licensed under the MIT [License](LICENSE). 
+
+**Word2Vec Model**:
+
+This project uses a mirrored version of the word2vec-slim model, which is stored in the `models/googlenews-slim` directory. This model is distributed under the Apache License 2.0. For more information about the model, its original authors, and the license, please see the `models/googlenews-slim/ATTRIBUTION.md` file.
+
+**Fasttext word vectors**:
+
+This project uses a processed version of the fasttext word vectors, which is stored in the `models/fasttext` directory. This work is distributed under the Creative Commons Attribution-Share-Alike License 3.0. For more information about the model, its original authors, and the license, please see the `models/fasttext/ATTRIBUTION.md` file.
+
 
 ## Sources of models in the web
 - Google's Word2Vec: from https://github.com/mmihaltz/word2vec-GoogleNews-vectors
