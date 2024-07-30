@@ -36,6 +36,11 @@ The output will show matches with their similarity scores, highlighted words, co
 
 ## Installation
 
+Two files are absolutely needed: 
+1. the sgrep binary
+2. the vector embedding model file
+3. (Optionally, a config.json file to tell sgrep where the embedding model is)
+
 **Using install script**:
 
 ```bash
@@ -52,7 +57,7 @@ bash install.sh
 **Binary**:
 
 1. Download the latest binary release
-2. Download a word2vec model (see below)
+2. Download a vector embedding model (see below)
 3. Optionally, download the config.json to configure model location there (or do this from the command line)
 
 **From source (linux/osx)**:
