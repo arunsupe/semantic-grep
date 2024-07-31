@@ -102,6 +102,8 @@ If no file is specified, sgrep reads from standard input.
 ### Quick start:
 `sgrep` requires a word embedding model in __binary__ format. The default model loader uses the model file's extension to determine the type (.bin, .8bit.int). A few compatible model files are provided in this repo ([models/](models/)). Download one of the .bin files from the `models/` directory and update the path in config.json.
 
+Note: `git clone` will not download the large binary model files unless git lfs is installed in your machine. If you do not want to install git-lfs, just manually download the model .bin file and place it in the correct folder.
+
 
 ### Support for multiple languages:
 Facebook's fasttext group have published word vectors in [157 languages](https://fasttext.cc/docs/en/crawl-vectors.html) - an amazing resource. I have provided a small go program, [fasttext-to-bin](model_processing_utils/), to make `sgrep` compatible binary models from this. (note: use the text files with "__.vec.gz__" extension, not the binary ".bin.gz" files)

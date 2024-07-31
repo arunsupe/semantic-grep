@@ -27,7 +27,45 @@ type Word2VecModel struct {
 	Size    int
 }
 
+// // LoadModel loads a 32-bit floating point Word2Vec model from a file
+// func (m *Word2VecModel) LoadModel(filename string) error {
+// 	file, err := os.Open(filename)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to open file: %v", err)
+// 	}
+// 	defer file.Close()
+
+// 	reader := bufio.NewReader(file)
+
+// 	var vocabSize, vectorSize int
+// 	fmt.Fscanf(reader, "%d %d\n", &vocabSize, &vectorSize)
+
+// 	m.Vectors = make(map[string][]float32, vocabSize)
+// 	m.Size = vectorSize
+
+// 	for i := 0; i < vocabSize; i++ {
+// 		word, err := reader.ReadString(' ')
+// 		if err != nil {
+// 			return fmt.Errorf("failed to read word: %v", err)
+// 		}
+// 		word = strings.TrimSpace(word)
+
+// 		vector := make([]float32, vectorSize)
+// 		for j := 0; j < vectorSize; j++ {
+// 			err := binary.Read(reader, binary.LittleEndian, &vector[j])
+// 			if err != nil {
+// 				return fmt.Errorf("failed to read vector: %v", err)
+// 			}
+// 		}
+// 		m.Vectors[word] = vector
+// 	}
+
+// 	return nil
+// }
+
 // LoadModel loads a 32-bit floating point Word2Vec model from a file
+// Attempt to validate the header and check for unexpected data
+//   at the end of each record and at the end of the file
 func (m *Word2VecModel) LoadModel(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -37,8 +75,17 @@ func (m *Word2VecModel) LoadModel(filename string) error {
 
 	reader := bufio.NewReader(file)
 
+	// Read header
 	var vocabSize, vectorSize int
-	fmt.Fscanf(reader, "%d %d\n", &vocabSize, &vectorSize)
+	_, err = fmt.Fscanf(reader, "%d %d\n", &vocabSize, &vectorSize)
+	if err != nil {
+		return fmt.Errorf("failed to read header: %v\nCheck that you have a valid model file", err)
+	}
+
+	// Validate header
+	if vocabSize <= 0 || vectorSize <= 0 {
+		return fmt.Errorf("invalid header: vocabSize=%d, vectorSize=%d\nCheck that you have a valid model file", vocabSize, vectorSize)
+	}
 
 	m.Vectors = make(map[string][]float32, vocabSize)
 	m.Size = vectorSize
@@ -57,7 +104,23 @@ func (m *Word2VecModel) LoadModel(filename string) error {
 				return fmt.Errorf("failed to read vector: %v", err)
 			}
 		}
+
+		// Check if we've reached the end of the record
+		nextByte, err := reader.Peek(1)
+		if err != nil && err != io.EOF {
+			return fmt.Errorf("unexpected error reading next byte: %v", err)
+		}
+		if len(nextByte) > 0 && nextByte[0] == '\n' {
+			reader.ReadByte() // consume the newline
+		}
+
 		m.Vectors[word] = vector
+	}
+
+	// Check if we've reached the end of the file
+	_, err = reader.ReadByte()
+	if err != io.EOF {
+		return fmt.Errorf("unexpected data at end of file.\nCheck that you have a valid model file")
 	}
 
 	return nil
