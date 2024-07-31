@@ -17,7 +17,6 @@ import (
 
 func main() {
 	modelPath := flag.String("model_path", "", "Path to the Word2Vec model file")
-	// quantized := flag.Bool("q", false, "Use quantized model")
 	similarityThreshold := flag.Float64("threshold", 0.7, "Similarity threshold for matching")
 	contextBefore := flag.Int("A", 0, "Number of lines before matching line")
 	contextAfter := flag.Int("B", 0, "Number of lines after matching line")
@@ -77,20 +76,6 @@ func main() {
 
 	var w2vModel model.VectorModel
 	var similarityCache similarity.SimilarityCache
-
-	// if *quantized {
-	// 	w2vModel, err = model.LoadQuantizedModel(*modelPath)
-	// 	if err != nil {
-	// 		fmt.Fprintf(os.Stderr, "Error loading quantized model: %v\n", err)
-	// 		os.Exit(1)
-	// 	}
-	// } else {
-	// 	w2vModel, err = model.LoadWord2VecModel(*modelPath)
-	// 	if err != nil {
-	// 		fmt.Fprintf(os.Stderr, "Error loading full model: %v\n", err)
-	// 		os.Exit(1)
-	// 	}
-	// }
 
 	w2vModel, err = model.LoadVectorModel(*modelPath)
 	if err != nil {
