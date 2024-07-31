@@ -106,7 +106,7 @@ Note: `git clone` will not download the large binary model files unless git lfs 
 
 
 ### Support for multiple languages:
-Facebook's fasttext group have published word vectors in [157 languages](https://fasttext.cc/docs/en/crawl-vectors.html) - an amazing resource. I have provided a small go program, [fasttext-to-bin](model_processing_utils/), to make `sgrep` compatible binary models from this. (note: use the text files with "__.vec.gz__" extension, not the binary ".bin.gz" files)
+Facebook's fasttext group have published word vectors in [157 languages](https://fasttext.cc/docs/en/crawl-vectors.html) - an amazing resource. I want to host these files on my github account, but alas, they are too big and $$$. Therefore, I have provided a small go program, [fasttext-to-bin](model_processing_utils/), that can make `sgrep` compatible binary models from this. (note: use the text files with "__.vec.gz__" extension, not the binary ".bin.gz" files)
 
 ```bash
 # e.g., for a French model:
