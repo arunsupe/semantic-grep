@@ -10,7 +10,7 @@ Search for words similar to "death" in Hemingway's "The Old Man and the Sea" wit
 
 ```bash
 curl -s 'https://gutenberg.ca/ebooks/hemingwaye-oldmanandthesea/hemingwaye-oldmanandthesea-00-t.txt' \
-    | w2vgrep -C 2 -n -threshold 0.55 death
+    | w2vgrep -C 2 -n --threshold=0.55 death
 ```
 
 Output:
@@ -86,16 +86,17 @@ Basic usage:
 If no file is specified, w2vgrep reads from standard input.
 
 ### Command-line Options
-
-- `-model_path`: Path to the Word2Vec model file ('models/glove/glove.6B.300d.bin'). Overrides config file.
-- `-threshold`: Similarity threshold for matching (default: 0.7)
-- `-A`: Number of lines to display after a match
-- `-B`: Number of lines to display before a match
-- `-C`: Number of lines to display before and after a match
-- `-n`: Print line numbers
-- `-o`: Print only matching word
-- `-l`: Print only matched lines
-- `-i`: Case insensitive matching
+```
+-m, --model_path=     Path to the Word2Vec model file. Overrides config file
+-t, --threshold=      Similarity threshold for matching (default: 0.7)
+-A, --before-context= Number of lines before matching line
+-B, --after-context=  Number of lines after matching line
+-C, --context=        Number of lines before and after matching line
+-n, --line-number     Print line numbers
+-i, --ignore-case     Ignore case. 
+-o, --only-matching   Output only matching words
+-l, --only-lines      Output only matched lines without similarity scores
+```
 
 ## Configuration
 
@@ -119,7 +120,7 @@ curl -s 'https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fr.300.vec.gz'
 
 # use it like so:
 # curl -s 'https://www.gutenberg.org/cache/epub/17989/pg17989.txt' \
-#    | w2vgrep -C 2 -n -threshold 0.55 \
+#    | w2vgrep -C 2 -n -t 0.55 \
 #           -model_path model_processing_utils/cc.fr.300.bin 'château'
 ```
 
