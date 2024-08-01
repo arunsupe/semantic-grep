@@ -1,7 +1,3 @@
-/* Process command line arguments and call the processor to
-process the input file line by line.
-*/
-
 package main
 
 import (
@@ -23,6 +19,8 @@ func main() {
 	contextBoth := flag.Int("C", 0, "Number of lines before and after matching line")
 	printLineNumbers := flag.Bool("n", false, "Print line numbers")
 	ignoreCase := flag.Bool("i", false, "Ignore case. Note: word2vec is case-sensitive. Ignoring case may lead to unexpected results")
+	outputOnlyMatching := flag.Bool("o", false, "Output only matching words")
+	outputOnlyLines := flag.Bool("l", false, "Output only matched lines without similarity scores")
 
 	flag.Parse()
 
@@ -85,6 +83,7 @@ func main() {
 	similarityCache = similarity.NewSimilarityCache()
 
 	// Dereference the pointers when passing to ProcessLineByLine
-	processor.ProcessLineByLine(query, w2vModel, similarityCache, *similarityThreshold, *contextBefore, *contextAfter, input, *printLineNumbers, *ignoreCase)
-
+	processor.ProcessLineByLine(query, w2vModel, similarityCache, *similarityThreshold,
+		*contextBefore, *contextAfter, input, *printLineNumbers, *ignoreCase,
+		*outputOnlyMatching, *outputOnlyLines)
 }

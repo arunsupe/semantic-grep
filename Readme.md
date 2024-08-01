@@ -91,6 +91,9 @@ If no file is specified, sgrep reads from standard input.
 - `-B`: Number of lines to display before a match
 - `-C`: Number of lines to display before and after a match
 - `-n`: Print line numbers
+- `-o`: Print only matching word
+- `-l`: Print only matched lines
+- `-i`: Case insensitive matching
 
 ## Configuration
 

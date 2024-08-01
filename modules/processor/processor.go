@@ -1,17 +1,3 @@
-/*
-Package processor provides functionality to process input files line by line.
-
-It embeds the query, tokenizes input lines, embeds each token, and calculates
-the similarity between the query and each token in the line. If the similarity
-is above a threshold, it prints the line with the matched token highlighted.
-
-Key features:
-- Case sensitivity handling
-- Context printing (before and after matching lines)
-- Line number printing
-- Similarity caching for performance
-*/
-
 package processor
 
 import (
@@ -27,7 +13,10 @@ import (
 	"github.com/clipperhouse/uax29/words"
 )
 
-func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache similarity.SimilarityCache, similarityThreshold float64, contextBefore, contextAfter int, input *os.File, printLineNumbers bool, ignoreCase bool) {
+func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache similarity.SimilarityCache,
+	similarityThreshold float64, contextBefore, contextAfter int, input *os.File,
+	printLineNumbers, ignoreCase, outputOnlyMatching, outputOnlyLines bool) {
+
 	// Prepare query vector
 	var queryTokenToCheck string
 	if ignoreCase {
@@ -68,34 +57,44 @@ func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache
 				highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
 				matched = true
 				similarityScore = similarity
-				break
+				if outputOnlyMatching {
+					fmt.Println(token)
+					break // Stop after first match if -o is set
+				}
 			}
 		}
 
 		// Handle matched line
 		if matched {
-			fmt.Printf("Similarity: %.4f\n", similarityScore)
-			// Print the context lines before the match
-			for i, ctxLine := range contextBuffer {
-				utils.PrintLine(ctxLine, contextLineNumbers[i], printLineNumbers)
+			if outputOnlyMatching {
+				// Already printed in the loop above
+			} else if outputOnlyLines {
+				utils.PrintLine(highlightedLine, lineNumber, printLineNumbers)
+			} else {
+				fmt.Printf("Similarity: %.4f\n", similarityScore)
+				// Print the context lines before the match
+				for i, ctxLine := range contextBuffer {
+					utils.PrintLine(ctxLine, contextLineNumbers[i], printLineNumbers)
+				}
+
+				// Print the matched line with highlighted token
+				utils.PrintLine(highlightedLine, lineNumber, printLineNumbers)
+
+				// Print the context lines after the match
+				for i := 0; i < contextAfter && scanner.Scan(); i++ {
+					lineNumber++
+					utils.PrintLine(scanner.Text(), lineNumber, printLineNumbers)
+				}
+
+				fmt.Println("--")
 			}
-			// Clear the context buffer as it has been printed
+
+			// Clear the context buffer after printing
 			contextBuffer = nil
 			contextLineNumbers = nil
-
-			// Print the matched line with highlighted token
-			utils.PrintLine(highlightedLine, lineNumber, printLineNumbers)
-
-			// Print the context lines after the match
-			for i := 0; i < contextAfter && scanner.Scan(); i++ {
-				lineNumber++
-				utils.PrintLine(scanner.Text(), lineNumber, printLineNumbers)
-			}
-
-			fmt.Println("--")
 		} else {
 			// Update the context buffer with the current line if no match is found
-			if contextBefore > 0 {
+			if contextBefore > 0 && !outputOnlyMatching && !outputOnlyLines {
 				contextBuffer = append(contextBuffer, line)
 				contextLineNumbers = append(contextLineNumbers, lineNumber)
 				// Ensure the context buffer does not exceed the specified number of lines
