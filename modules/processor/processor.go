@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"sgrep/modules/model"
-	"sgrep/modules/similarity"
-	"sgrep/modules/utils"
+	"w2vgrep/modules/model"
+	"w2vgrep/modules/similarity"
+	"w2vgrep/modules/utils"
 
 	"github.com/clipperhouse/uax29/words"
 )

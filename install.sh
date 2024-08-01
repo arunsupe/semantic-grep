@@ -9,32 +9,32 @@ if [ $? -ne 0 ]; then
 fi
 echo "[OK] golang installed"
 
-# Building and installing sgrep
-echo "[*] Building and installing sgrep"
-go  build -o sgrep
+# Building and installing w2vgrep
+echo "[*] Building and installing w2vgrep"
+go  build -o w2vgrep
 if [ $? -ne 0 ]; then
-    echo "Failed to build sgrep"
+    echo "Failed to build w2vgrep"
     exit 1
 fi
-echo "[OK] sgrep built"
+echo "[OK] w2vgrep built"
 
-# Prompt to either move to /usr/bin/sgrep, adding local path to $PATH or doing nothing
-echo "[*] Where would you like to install sgrep?"
-echo "1. /usr/bin/sgrep (will require sudo)"
+# Prompt to either move to /usr/bin/w2vgrep, adding local path to $PATH or doing nothing
+echo "[*] Where would you like to install w2vgrep?"
+echo "1. /usr/bin/w2vgrep (will require sudo)"
 echo "2. Add local path to \$PATH"
 echo "3. Do nothing"
 read -p "Enter your choice: " choice
 
-INSTALL_PATH="$(pwd)/sgrep"
+INSTALL_PATH="$(pwd)/w2vgrep"
 if [ $choice -eq 1 ]; then
-    echo "[*] Installing sgrep in /usr/bin/sgrep, please enter your password as sudo is required."
-    sudo cp sgrep /usr/bin/sgrep
+    echo "[*] Installing w2vgrep in /usr/bin/w2vgrep, please enter your password as sudo is required."
+    sudo cp w2vgrep /usr/bin/w2vgrep
     if [ $? -ne 0 ]; then
-        echo "Failed to install sgrep"
+        echo "Failed to install w2vgrep"
         exit 1
     fi
-    INSTALL_PATH="/usr/bin/sgrep"
-    echo "[OK] sgrep installed in /usr/bin/sgrep"
+    INSTALL_PATH="/usr/bin/w2vgrep"
+    echo "[OK] w2vgrep installed in /usr/bin/w2vgrep"
 elif [ $choice -eq 2 ]; then
     echo "[*] Adding local path to \$PATH"
     export PATH=$PATH:$(pwd)
@@ -110,7 +110,7 @@ cat "$CONFIG_PATH"
 echo "[*] Testing"
 $INSTALL_PATH -h
 if [ $? -ne 0 ]; then
-    echo "Failed to test sgrep"
+    echo "Failed to test w2vgrep"
     exit 1
 fi
-echo "[OK] sgrep tested and working. Installation complete."
+echo "[OK] w2vgrep tested and working. Installation complete."

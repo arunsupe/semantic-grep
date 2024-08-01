@@ -1,6 +1,8 @@
-# sgrep - Semantic Grep
+# ~~sgrep~~ w2vgrep - Semantic Grep
 
-sgrep is a command-line tool that performs semantic searches on text input using word embeddings. It's designed to find semantically similar matches to the query, going beyond simple string matching. Supports multiple languages. The experience is designed to be similar to grep. 
+w2vgrep is a command-line tool that performs semantic searches on text input using word embeddings. It's designed to find semantically similar matches to the query, going beyond simple string matching. Supports multiple languages. The experience is designed to be similar to grep. 
+
+__The name sgrep is already in use. So, changing the name to `w2vgrep`, for _word2vec grep_, in homage to [rasengan0](https://news.ycombinator.com/item?id=41088273#41089679).__ As has been said before, naming is hard :)
 
 ## Example Usage
 
@@ -8,7 +10,7 @@ Search for words similar to "death" in Hemingway's "The Old Man and the Sea" wit
 
 ```bash
 curl -s 'https://gutenberg.ca/ebooks/hemingwaye-oldmanandthesea/hemingwaye-oldmanandthesea-00-t.txt' \
-    | sgrep -C 2 -n -threshold 0.55 death
+    | w2vgrep -C 2 -n -threshold 0.55 death
 ```
 
 Output:
@@ -17,7 +19,7 @@ Output:
 This command:
 
     - Fetches the text of "The Old Man and the Sea" from Project Gutenberg Canada
-    - Pipes the text to sgrep
+    - Pipes the text to w2vgrep
     - Searches for words semantically similar to "death"
     - Uses a similarity threshold of 0.55 (-threshold 0.55)
     - Displays 2 lines of context before and after each match (-C 2)
@@ -38,9 +40,9 @@ The output will show matches with their similarity scores, highlighted words, co
 ## Installation
 
 Two files are absolutely needed: 
-1. the sgrep binary
+1. the w2vgrep binary
 2. the vector embedding model file
-3. (Optionally, a config.json file to tell sgrep where the embedding model is)
+3. (Optionally, a config.json file to tell w2vgrep where the embedding model is)
 
 **Using install script**:
 
@@ -69,7 +71,7 @@ git clone https://github.com/arunsupe/semantic-grep.git
 cd semantic-grep
 
 # build
-go build -o sgrep
+go build -o w2vgrep
 
 # download a word2vec model using this helper script (see "Word Embedding Model" below)
 bash download-model.sh
@@ -79,9 +81,9 @@ bash download-model.sh
 
 Basic usage:
 
-./sgrep [options] <query> [file]
+./w2vgrep [options] <query> [file]
 
-If no file is specified, sgrep reads from standard input.
+If no file is specified, w2vgrep reads from standard input.
 
 ### Command-line Options
 
@@ -97,19 +99,19 @@ If no file is specified, sgrep reads from standard input.
 
 ## Configuration
 
-`sgrep` can be configured using a JSON file. By default, it looks for `config.json` in the current directory, "$HOME/.config/semantic-grep/config.json" and "/etc/semantic-grep/config.json".
+`w2vgrep` can be configured using a JSON file. By default, it looks for `config.json` in the current directory, "$HOME/.config/semantic-grep/config.json" and "/etc/semantic-grep/config.json".
 
 
 ## Word Embedding Model
 
 ### Quick start:
-`sgrep` requires a word embedding model in __binary__ format. The default model loader uses the model file's extension to determine the type (.bin, .8bit.int). A few compatible model files are provided in this repo ([models/](models/)). Download one of the .bin files from the `models/` directory and update the path in config.json.
+`w2vgrep` requires a word embedding model in __binary__ format. The default model loader uses the model file's extension to determine the type (.bin, .8bit.int). A few compatible model files are provided in this repo ([models/](models/)). Download one of the .bin files from the `models/` directory and update the path in config.json.
 
 Note: `git clone` will not download the large binary model files unless git lfs is installed in your machine. If you do not want to install git-lfs, just manually download the model .bin file and place it in the correct folder.
 
 
 ### Support for multiple languages:
-Facebook's fasttext group have published word vectors in [157 languages](https://fasttext.cc/docs/en/crawl-vectors.html) - an amazing resource. I want to host these files on my github account, but alas, they are too big and $$$. Therefore, I have provided a small go program, [fasttext-to-bin](model_processing_utils/), that can make `sgrep` compatible binary models from this. (note: use the text files with "__.vec.gz__" extension, not the binary ".bin.gz" files)
+Facebook's fasttext group have published word vectors in [157 languages](https://fasttext.cc/docs/en/crawl-vectors.html) - an amazing resource. I want to host these files on my github account, but alas, they are too big and $$$. Therefore, I have provided a small go program, [fasttext-to-bin](model_processing_utils/), that can make `w2vgrep` compatible binary models from this. (note: use the text files with "__.vec.gz__" extension, not the binary ".bin.gz" files)
 
 ```bash
 # e.g., for a French model:
@@ -117,12 +119,12 @@ curl -s 'https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fr.300.vec.gz'
 
 # use it like so:
 # curl -s 'https://www.gutenberg.org/cache/epub/17989/pg17989.txt' \
-#    | sgrep -C 2 -n -threshold 0.55 \
+#    | w2vgrep -C 2 -n -threshold 0.55 \
 #           -model_path model_processing_utils/cc.fr.300.bin 'château'
 ```
 
 ### Roll your own:
-Alternatively, you can use pre-trained models (like Google's Word2Vec) or train your own using tools like gensim. Note though that there does not seem to be a standardized binary format (google's is different to facebook's fasttext or gensim's default _save()_). For `sgrep`, because efficiently loading the large model is key for performance, I have elected to keep the simplest format. 
+Alternatively, you can use pre-trained models (like Google's Word2Vec) or train your own using tools like gensim. Note though that there does not seem to be a standardized binary format (google's is different to facebook's fasttext or gensim's default _save()_). For `w2vgrep`, because efficiently loading the large model is key for performance, I have elected to keep the simplest format. 
 
 
 ## A word about performance of the different embedding models

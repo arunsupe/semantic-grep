@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"sgrep/modules/config"
-	"sgrep/modules/model"
-	"sgrep/modules/processor"
-	"sgrep/modules/similarity"
+	"w2vgrep/modules/config"
+	"w2vgrep/modules/model"
+	"w2vgrep/modules/processor"
+	"w2vgrep/modules/similarity"
 )
 
 func main() {
