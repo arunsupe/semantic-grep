@@ -50,17 +50,27 @@ func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache
 				tokenToCheck = token
 			}
 
-			// Calculate similarity and check threshold
-			tokenVector := w2vModel.GetEmbedding(tokenToCheck)
-			similarity := similarityCache.MemoizedCalculateSimilarity(queryTokenToCheck, tokenToCheck, queryVector, tokenVector)
-			if similarity > similarityThreshold {
-				highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
+			// Check if tokenToCheck is exactly equal to queryTokenToCheck
+			if tokenToCheck == queryTokenToCheck {
+				similarityScore = 1.0
 				matched = true
-				similarityScore = similarity
+				highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
+			} else {
+				// Calculate similarity and check threshold
+				tokenVector := w2vModel.GetEmbedding(tokenToCheck)
+				similarityScore = similarityCache.MemoizedCalculateSimilarity(queryTokenToCheck, tokenToCheck, queryVector, tokenVector)
+				if similarityScore > similarityThreshold {
+					matched = true
+					highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
+				}
+			}
+
+			if matched {
 				if outputOnlyMatching {
 					fmt.Println(token)
 					break // Stop after first match if -o is set
 				}
+				break // Stop checking other tokens in this line
 			}
 		}
 
