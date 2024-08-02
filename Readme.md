@@ -128,6 +128,29 @@ curl -s 'https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fr.300.vec.gz'
 Alternatively, you can use pre-trained models (like Google's Word2Vec) or train your own using tools like gensim. Note though that there does not seem to be a standardized binary format (google's is different to facebook's fasttext or gensim's default _save()_). For `w2vgrep`, because efficiently loading the large model is key for performance, I have elected to keep the simplest format. 
 
 
+### Testing the model by finding synonyms
+To help troubleshoot the model, I added a `synonym-finder.go` to `./model_processing_utils/`. This program will find similar words to the query word above any threshold in the model.
+
+```bash
+# build
+cd model_processing_utils
+go build synonym-finder.go
+
+#run
+synonym-finder -model_path path/to/cc.zh.300.bin -threshold 0.6 合理性
+
+# Output
+Words similar to '合理性' with similarity >= 0.60:
+科学性 0.6304
+合理性 1.0000
+正当性 0.6018
+公允性 0.6152
+不合理性 0.6094
+合法性 0.6219
+有效性 0.6374
+必要性 0.6499
+```
+
 ## A word about performance of the different embedding models
 Different models define "similarity" differently ([explaination](https://machinelearninginterview.com/topics/natural-language-processing/what-is-the-difference-between-word2vec-and-glove/)). However, for practical purposes, they seem equivalent enough.
 
