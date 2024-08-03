@@ -18,7 +18,7 @@ import (
 // VectorModel interface defines the methods that all vector models must implement
 type VectorModel interface {
 	LoadModel(filename string) error
-	GetEmbedding(token string) interface{}
+	GetEmbedding(token string) (interface{}, error)
 }
 
 // VecModel32bit represents a 32-bit floating point Word2Vec model
@@ -91,12 +91,12 @@ func (m *VecModel32bit) LoadModel(filename string) error {
 }
 
 // GetEmbedding returns the vector embedding of a token for the 32-bit model
-func (m *VecModel32bit) GetEmbedding(token string) interface{} {
+func (m *VecModel32bit) GetEmbedding(token string) (interface{}, error) {
 	vec, ok := m.Vectors[token]
 	if !ok {
-		return make([]float32, m.Size)
+		return nil, fmt.Errorf("word not found in model: %s", token)
 	}
-	return vec
+	return vec, nil
 }
 
 // VecModel8bit represents an 8-bit integer quantized Word2Vec model
@@ -151,12 +151,12 @@ func (m *VecModel8bit) LoadModel(filename string) error {
 }
 
 // GetEmbedding returns the vector embedding of a token for the 8-bit quantized model
-func (m *VecModel8bit) GetEmbedding(token string) interface{} {
+func (m *VecModel8bit) GetEmbedding(token string) (interface{}, error) {
 	vec, ok := m.Vectors[token]
 	if !ok {
-		return make([]int8, m.Size)
+		return nil, fmt.Errorf("word not found in model: %s", token)
 	}
-	return vec
+	return vec, nil
 }
 
 // Helper function to read null-terminated strings

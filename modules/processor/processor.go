@@ -24,7 +24,13 @@ func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache
 	} else {
 		queryTokenToCheck = query
 	}
-	queryVector := w2vModel.GetEmbedding(queryTokenToCheck)
+
+	queryVector, err := w2vModel.GetEmbedding(queryTokenToCheck)
+	queryInModel := true
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
+		queryInModel = false
+	}
 
 	scanner := bufio.NewScanner(input)
 	lineNumber := 0
@@ -55,13 +61,16 @@ func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache
 				similarityScore = 1.0
 				matched = true
 				highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
-			} else {
-				// Calculate similarity and check threshold
-				tokenVector := w2vModel.GetEmbedding(tokenToCheck)
-				similarityScore = similarityCache.MemoizedCalculateSimilarity(queryTokenToCheck, tokenToCheck, queryVector, tokenVector)
-				if similarityScore > similarityThreshold {
-					matched = true
-					highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
+			} else if queryInModel {
+				// Only perform similarity check if query is in the model
+				tokenVector, err := w2vModel.GetEmbedding(tokenToCheck)
+				if err == nil {
+					// Calculate similarity and check threshold only if token is in model
+					similarityScore = similarityCache.MemoizedCalculateSimilarity(queryTokenToCheck, tokenToCheck, queryVector, tokenVector)
+					if similarityScore > similarityThreshold {
+						matched = true
+						highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
+					}
 				}
 			}
 
