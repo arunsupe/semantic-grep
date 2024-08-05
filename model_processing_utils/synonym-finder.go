@@ -1,3 +1,22 @@
+// A program to find synonyms for a given word in a Word2Vec model.
+// It finds words in the model with similarity scores above a given threshold.
+//
+// Usage: synonym-finder [OPTIONS] QUERY
+//   QUERY is the word to find similar words for (required)
+// Options:
+//   -model_path string
+//         Path to the Word2Vec model file (required)
+//   -threshold float
+//         Similarity threshold for matching (required) (default 0.7)
+//   -ignore-case
+//         Ignore case. Note: word2vec is case-sensitive. Ignoring case may lead to unexpected results
+//   -f string
+//         File containing patterns, one per line
+//   -o    Print only matching tokens
+//
+// Example:
+//   synonym-finder -model_path ../models/glove/glove.6B.300d.bin -threshold 0.5 angry
+
 package main
 
 import (
