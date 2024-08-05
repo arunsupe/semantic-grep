@@ -1,17 +1,3 @@
-// A program to find synonyms for a given word in a Word2Vec model.
-// It finds words in the model with similarity scores above a given threshold.
-//
-// Usage: synonym-finder [OPTIONS] QUERY
-//   QUERY is the word to find similar words for (required)
-// Options:
-//   -model_path string
-//         Path to the Word2Vec model file (required)
-//   -threshold float
-//         Similarity threshold for matching (required) (default 0.7)
-//
-// Example:
-//   synonym-finder -model_path ../models/glove/glove.6B.300d.bin -threshold 0.5 angry
-
 package main
 
 import (
@@ -30,6 +16,8 @@ type Options struct {
 	ModelPath           string
 	SimilarityThreshold float64
 	IgnoreCase          bool
+	PatternFile         string
+	OnlyMatching        bool // New field for -o flag
 }
 
 // VectorModel interface defines the methods that all vector models must implement
@@ -146,18 +134,55 @@ func calculateSimilarity32bit(vec1, vec2 []float32) float64 {
 }
 
 // findSimilarWords finds words in the model that are similar to the query word above the given threshold
-func findSimilarWords(model VectorModel, query string, threshold float64) error {
+func findSimilarWords(model VectorModel, query string, threshold float64, onlyMatching bool) error {
 	queryEmbedding := model.GetEmbedding(query).([]float32)
 	if len(queryEmbedding) == 0 {
 		return fmt.Errorf("query word not found in model")
 	}
 
-	fmt.Printf("Words similar to '%s' with similarity >= %.2f:\n", query, threshold)
+	if onlyMatching {
+		fmt.Println(query) // Print the bare query
+	} else {
+		fmt.Printf("Words similar to '%s' with similarity >= %.2f:\n", query, threshold)
+	}
+
 	for word, embedding := range model.(*VecModel32bit).Vectors {
 		similarity := calculateSimilarity32bit(queryEmbedding, embedding)
-		if similarity >= threshold {
-			fmt.Printf("%s %.4f\n", word, similarity)
+		if similarity >= threshold && similarity < 1.0 {
+			if onlyMatching {
+				fmt.Println(word)
+			} else {
+				fmt.Printf("%s %.4f\n", word, similarity)
+			}
 		}
+	}
+
+	return nil
+}
+
+// findSimilarWordsForPatterns finds similar words for each pattern in the given file
+func findSimilarWordsForPatterns(model VectorModel, patternFile string, threshold float64, onlyMatching bool) error {
+	file, err := os.Open(patternFile)
+	if err != nil {
+		return fmt.Errorf("failed to open pattern file: %v", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		pattern := strings.TrimSpace(scanner.Text())
+		if pattern == "" {
+			continue
+		}
+
+		err := findSimilarWords(model, pattern, threshold, onlyMatching)
+		if err != nil {
+			fmt.Printf("Warning: %v\n", err)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading pattern file: %v", err)
 	}
 
 	return nil
@@ -169,27 +194,22 @@ func main() {
 	flag.StringVar(&opts.ModelPath, "model_path", "", "Path to the Word2Vec model file (required)")
 	flag.Float64Var(&opts.SimilarityThreshold, "threshold", 0.7, "Similarity threshold for matching (default 0.7)")
 	flag.BoolVar(&opts.IgnoreCase, "ignore-case", false, "Ignore case. Note: word2vec is case-sensitive. Ignoring case may lead to unexpected results")
+	flag.StringVar(&opts.PatternFile, "f", "", "File containing patterns, one per line")
+	flag.BoolVar(&opts.OnlyMatching, "o", false, "Print only matching tokens")
 
 	// Custom usage message
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] QUERY\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "QUERY is the word to find similar words for (required)\n\n")
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] [QUERY]\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "QUERY is the word to find similar words for (required if -f is not used)\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
-		fmt.Fprintf(os.Stderr, "\nExample:\n")
+		fmt.Fprintf(os.Stderr, "\nExamples:\n")
 		fmt.Fprintf(os.Stderr, "  %s -model_path path/to/model.bin -threshold 0.8 cat\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -model_path path/to/model.bin -threshold 0.8 -f patterns.txt\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -model_path path/to/model.bin -threshold 0.8 -o cat\n", os.Args[0])
 	}
 
 	flag.Parse()
-
-	args := flag.Args()
-	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, "Error: Exactly one query word is required")
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	query := args[0]
 
 	if opts.ModelPath == "" {
 		fmt.Fprintln(os.Stderr, "Error: Model path is required. Please provide it via -model_path flag.")
@@ -209,9 +229,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = findSimilarWords(model, query, opts.SimilarityThreshold)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error finding similar words: %v\n", err)
-		os.Exit(1)
+	if opts.PatternFile != "" {
+		err = findSimilarWordsForPatterns(model, opts.PatternFile, opts.SimilarityThreshold, opts.OnlyMatching)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error processing pattern file: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		args := flag.Args()
+		if len(args) != 1 {
+			fmt.Fprintln(os.Stderr, "Error: Exactly one query word is required when not using -f")
+			flag.Usage()
+			os.Exit(1)
+		}
+
+		query := args[0]
+		err = findSimilarWords(model, query, opts.SimilarityThreshold, opts.OnlyMatching)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error finding similar words: %v\n", err)
+			os.Exit(1)
+		}
 	}
 }
