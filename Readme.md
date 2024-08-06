@@ -1,8 +1,7 @@
-# ~~sgrep~~ w2vgrep - Semantic Grep
+# w2vgrep - Semantic Grep
 
 w2vgrep is a command-line tool that performs semantic searches on text input using word embeddings. It's designed to find semantically similar matches to the query, going beyond simple string matching. Supports multiple languages. The experience is designed to be similar to grep. 
 
-__The name sgrep is already in use. So, changing the name to `w2vgrep`, for _word2vec grep_, in homage to [rasengan0](https://news.ycombinator.com/item?id=41088273#41089679).__ As has been said before, naming is hard :)
 
 ## Example Usage
 
