@@ -13,23 +13,36 @@ import (
 	"github.com/clipperhouse/uax29/words"
 )
 
-func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache similarity.SimilarityCache,
+func ProcessLineByLine(queries []string, w2vModel model.VectorModel, similarityCache similarity.SimilarityCache,
 	similarityThreshold float64, contextBefore, contextAfter int, input *os.File,
 	printLineNumbers, ignoreCase, outputOnlyMatching, outputOnlyLines bool) {
 
-	// Prepare query vector
-	var queryTokenToCheck string
-	if ignoreCase {
-		queryTokenToCheck = strings.ToLower(query)
-	} else {
-		queryTokenToCheck = query
-	}
+	// Prepare query vectors
+	queryVectors := make(map[string]interface{})
+	queryInModel := make(map[string]bool)
 
-	queryVector, err := w2vModel.GetEmbedding(queryTokenToCheck)
-	queryInModel := true
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
-		queryInModel = false
+	for _, query := range queries {
+		var queryTokenToCheck string
+		if ignoreCase {
+			queryTokenToCheck = strings.ToLower(query)
+		} else {
+			queryTokenToCheck = query
+		}
+
+		queryVector, err := w2vModel.GetEmbedding(queryTokenToCheck)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
+			queryInModel[queryTokenToCheck] = false
+		} else {
+			switch queryVector.(type) {
+			case []float32, []int8:
+				queryVectors[queryTokenToCheck] = queryVector
+				queryInModel[queryTokenToCheck] = true
+			default:
+				fmt.Fprintf(os.Stderr, "Warning: Unsupported vector type for query: %s\n", queryTokenToCheck)
+				queryInModel[queryTokenToCheck] = false
+			}
+		}
 	}
 
 	scanner := bufio.NewScanner(input)
@@ -44,6 +57,7 @@ func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache
 		matched := false
 		var highlightedLine string
 		var similarityScore float64
+		var matchSimilarityScore float64
 
 		// Tokenize and check each token
 		tokens := words.NewSegmenter(scanner.Bytes())
@@ -56,30 +70,34 @@ func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache
 				tokenToCheck = token
 			}
 
-			// Check if tokenToCheck is exactly equal to queryTokenToCheck
-			if tokenToCheck == queryTokenToCheck {
-				similarityScore = 1.0
-				matched = true
-				highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
-			} else if queryInModel {
-				// Only perform similarity check if query is in the model
-				tokenVector, err := w2vModel.GetEmbedding(tokenToCheck)
-				if err == nil {
-					// Calculate similarity and check threshold only if token is in model
-					similarityScore = similarityCache.MemoizedCalculateSimilarity(queryTokenToCheck, tokenToCheck, queryVector, tokenVector)
-					if similarityScore > similarityThreshold {
-						matched = true
-						highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
+			for queryTokenToCheck, queryVector := range queryVectors {
+				// Check if tokenToCheck is exactly equal to queryTokenToCheck
+				if tokenToCheck == queryTokenToCheck {
+					similarityScore = 1.0
+					matchSimilarityScore = similarityScore
+					matched = true
+					highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
+				} else if queryInModel[queryTokenToCheck] {
+					// Only perform similarity check if query is in the model
+					tokenVector, err := w2vModel.GetEmbedding(tokenToCheck)
+					if err == nil {
+						// Calculate similarity and check threshold only if token is in model
+						similarityScore = similarityCache.MemoizedCalculateSimilarity(queryTokenToCheck, tokenToCheck, queryVector, tokenVector)
+						if similarityScore > similarityThreshold {
+							matched = true
+							highlightedLine = strings.Replace(line, token, utils.ColorText(token, "red"), -1)
+							matchSimilarityScore = similarityScore
+						}
 					}
 				}
-			}
 
-			if matched {
-				if outputOnlyMatching {
-					fmt.Println(token)
-					break // Stop after first match if -o is set
+				if matched {
+					if outputOnlyMatching {
+						fmt.Println(token)
+						break // Stop after first match if -o is set
+					}
+					break // Stop checking other tokens in this line
 				}
-				break // Stop checking other tokens in this line
 			}
 		}
 
@@ -90,7 +108,7 @@ func ProcessLineByLine(query string, w2vModel model.VectorModel, similarityCache
 			} else if outputOnlyLines {
 				utils.PrintLine(highlightedLine, lineNumber, printLineNumbers)
 			} else {
-				fmt.Printf("Similarity: %.4f\n", similarityScore)
+				fmt.Printf("Similarity: %.4f\n", matchSimilarityScore)
 				// Print the context lines before the match
 				for i, ctxLine := range contextBuffer {
 					utils.PrintLine(ctxLine, contextLineNumbers[i], printLineNumbers)
