@@ -96,6 +96,7 @@ If no file is specified, w2vgrep reads from standard input.
 -i, --ignore-case     Ignore case. 
 -o, --only-matching   Output only matching words
 -l, --only-lines      Output only matched lines without similarity scores
+-f, --file=           Match patterns from file, one pattern per line. Like grep -f.
 ```
 
 ## Configuration
