@@ -108,12 +108,9 @@ func ProcessLineByLine(queries []string, w2vModel model.VectorModel, similarityC
 					}
 				}
 
-				if matched {
-					if outputOnlyMatching {
-						fmt.Println(token)
-						break // Stop after first match if -o is set
-					}
-					break // Stop checking other tokens in this line
+				if matched && outputOnlyMatching {
+					fmt.Println(token)
+					matched = false // Stop after first match if -o is set
 				}
 			}
 		}
