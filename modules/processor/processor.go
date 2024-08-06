@@ -1,3 +1,5 @@
+// Package processor provides functions to process text line by line,
+// performing semantic searches using Word2Vec models.
 package processor
 
 import (
@@ -13,6 +15,21 @@ import (
 	"github.com/clipperhouse/uax29/words"
 )
 
+// ProcessLineByLine processes an input file line by line, performing semantic searches
+// based on the provided queries and Word2Vec model. It supports various options for
+// context lines, case sensitivity, and output formatting.
+//
+// queries: List of query words to search for.
+// w2vModel: The Word2Vec model used for semantic matching.
+// similarityCache: Cache for storing similarity calculations.
+// similarityThreshold: Threshold above which a match is considered similar.
+// contextBefore: Number of lines to include before a matching line.
+// contextAfter: Number of lines to include after a matching line.
+// input: The input file to process.
+// printLineNumbers: Whether to print line numbers in the output.
+// ignoreCase: Whether to ignore case when matching words.
+// outputOnlyMatching: Whether to output only the matching words.
+// outputOnlyLines: Whether to output only the lines that contain matches.
 func ProcessLineByLine(queries []string, w2vModel model.VectorModel, similarityCache similarity.SimilarityCache,
 	similarityThreshold float64, contextBefore, contextAfter int, input *os.File,
 	printLineNumbers, ignoreCase, outputOnlyMatching, outputOnlyLines bool) {
