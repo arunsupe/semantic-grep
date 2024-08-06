@@ -8,9 +8,9 @@ import (
 	"os"
 	"strings"
 
-	"w2vgrep/modules/model"
-	"w2vgrep/modules/similarity"
-	"w2vgrep/modules/utils"
+	"github.com/arunsupe/semantic-grep/modules/model"
+	"github.com/arunsupe/semantic-grep/modules/similarity"
+	"github.com/arunsupe/semantic-grep/modules/utils"
 
 	"github.com/clipperhouse/uax29/words"
 )

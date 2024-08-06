@@ -1,4 +1,4 @@
-module w2vgrep
+module github.com/arunsupe/semantic-grep
 
 go 1.22.5
 

@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"os"
 
-	"w2vgrep/modules/config"
-	"w2vgrep/modules/model"
-	"w2vgrep/modules/processor"
-	"w2vgrep/modules/similarity"
+	"github.com/arunsupe/semantic-grep/modules/config"
+	"github.com/arunsupe/semantic-grep/modules/model"
+	"github.com/arunsupe/semantic-grep/modules/processor"
+	"github.com/arunsupe/semantic-grep/modules/similarity"
 
 	"github.com/jessevdk/go-flags"
 )
