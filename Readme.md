@@ -162,6 +162,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License and attribution:
 The code in this project is licensed under the MIT [License](LICENSE). 
 
+**go-flags package:**
+
+The go-flags package, used by the code in this project, is distributed under the BSD-3-Clause license. Please see the license information https://github.com/jessevdk/go-flags.
+
 **Word2Vec Model**:
 
 This project uses a mirrored version of the word2vec-slim model, which is stored in the `models/googlenews-slim` directory. This model is distributed under the Apache License 2.0. For more information about the model, its original authors, and the license, please see the `models/googlenews-slim/ATTRIBUTION.md` file.
