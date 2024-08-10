@@ -1,1 +1,1 @@
-w2vgrep.go
+../../w2vgrep.go
