@@ -151,6 +151,25 @@ Words similar to '合理性' with similarity >= 0.60:
 必要性 0.6499
 ```
 
+
+## Decreasing the size of the model files
+The model files are large (Gigabytes). Each word is typically represented using 300 dimension, 32 bit floating point vectors. Reducing dimensionality, to 100 or 150 dimensions, can produce smaller, memory efficient, faster, more performant models with minimal (maybe even better) accuracy. In `model_processing_utils/reduce-model-size`, I have written a program to reduce model dimensions. This can be used to reduce the size of any word2vec binary model used by w2vgrep. Use this like so:
+
+```bash
+# build
+cd model_processing_utils/reduce-model-size
+go build .
+
+# run on large GoogleNews-vectors-negative300-SLIM.bin model (346MB) to make smaller
+# GoogleNews-vectors-negative100-SLIM.bin model (117MB)
+./reduce-pca -input ../../models/googlenews-slim/GoogleNews-vectors-negative300-SLIM.bin -output ../../models/googlenews-slim/GoogleNews-vectors-negative100-SLIM.bin
+
+# use this smaller model in w2vgrep like so
+curl -s 'https://gutenberg.ca/ebooks/hemingwaye-oldmanandthesea/hemingwaye-oldmanandthesea-00-t.txt' | bin/w2vgrep.linux.amd64 -n -t 0.5 -m models/googlenews-slim/GoogleNews-vectors-negative100-SLIM.bin --line-number death
+
+```
+
+
 ## A word about performance of the different embedding models
 Different models define "similarity" differently ([explaination](https://machinelearninginterview.com/topics/natural-language-processing/what-is-the-difference-between-word2vec-and-glove/)). However, for practical purposes, they seem equivalent enough.
 
